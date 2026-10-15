@@ -212,6 +212,7 @@ const CPU_Q_RANKS=[4,7,10,12,14,15,16];
 let qSelectedRank=null;
 let pendingGive=null;
 let pendingReceivedCard=null;
+let pendingDiscard=null;
 let state;
 
 const suitColor=s=>s==='♥'||s==='♦'?'red':'';
@@ -240,6 +241,7 @@ function shuffled(a){
 function newGame(){
  pendingGive=null;
  pendingReceivedCard=null;
+ pendingDiscard=null;
  const gm=document.getElementById("giveModal"); if(gm)gm.classList.remove("open");
  const receiveActions=document.getElementById('giveReceiveActions'); if(receiveActions)receiveActions.style.display='none';
  let deck=[];
@@ -263,7 +265,7 @@ function newGame(){
   players,turn:start,deck:[],table:[],trickCards:[],lastCards:[],lastPlayer:-1,
   passCount:0,selected:new Set(),jBack:false,revolution:false,neutralizeNext:false,lockSuit:null,effects:[],
   finished:false,finishOrder:[],pendingQ:false,turnSerial:0,
-  firstMove:true,eightCutPending:false
+  firstMove:true,eightCutPending:false,pendingDiscardCount:0
  };
 
  log('ゲーム開始。♦3を持つ'+players[start].name+'が♦3を出してスタートします。');
@@ -563,16 +565,9 @@ function playCards(cards,byCpu=false){
   }
 
   if(cards.some(c=>c.rank===10)){
-   let n=cards.filter(c=>c.rank===10).length;
+   const n=cards.filter(c=>c.rank===10).length;
    state.effects.push('10捨て（'+n+'枚）');
-   for(let i=0;i<n&&p.hand.length;i++){
-    // CPUはできるだけ残したいカード（7・10・Q・A・2・ジョーカー）を避けて捨てる。
-    const preferred=p.hand.filter(c=>![7,10,12,14,15,16].includes(c.rank));
-    const pool=byCpu&&preferred.length?preferred:p.hand;
-    const tossed=byCpu?pool[Math.floor(Math.random()*pool.length)]:p.hand[p.hand.length-1];
-    p.hand=p.hand.filter(c=>c.id!==tossed.id);
-    log(p.name+'が'+cardText(tossed)+'を捨てた');
-   }
+   state.pendingDiscardCount=n;
   }
 
   if(cards.some(c=>c.rank===11)){
@@ -606,6 +601,30 @@ function playCards(cards,byCpu=false){
     openQModal();
    }
    return true;
+  }
+ }
+
+ // 10捨て：出した10の枚数分、捨てるカードを選択する。
+ if(state.pendingDiscardCount>0){
+  const requested=state.pendingDiscardCount;
+  const count=Math.min(requested,p.hand.length);
+  state.pendingDiscardCount=0;
+  if(count>0){
+   if(byCpu){
+    for(let i=0;i<count&&p.hand.length>0;i++){
+     const preferred=p.hand.filter(c=>![7,10,12,14,15,16].includes(c.rank));
+     const pool=preferred.length?preferred:p.hand;
+     const tossed=pool[Math.floor(Math.random()*pool.length)];
+     p.hand=p.hand.filter(c=>c.id!==tossed.id);
+     log(p.name+'が'+cardText(tossed)+'を捨てた');
+    }
+   }else{
+    pendingDiscard={actorIndex:state.turn,remaining:count,clearNow,skip,byCpu:false};
+    openDiscardModal();
+    render();
+    document.getElementById('notice').textContent='10捨て：あと'+count+'枚、捨てるカードを選んでください';
+    return true;
+   }
   }
  }
 
@@ -729,6 +748,51 @@ function openGiveModal(){
   cardsBox.append(el);
  });
  modal.classList.add('open');
+}
+
+function openDiscardModal(){
+ if(!pendingDiscard)return;
+ const actor=state.players[pendingDiscard.actorIndex];
+ const modal=document.getElementById('giveModal');
+ const cardsBox=document.getElementById('giveCards');
+ document.getElementById('giveTitle').textContent='10捨て：捨てるカードを選択';
+ document.getElementById('giveHelp').textContent='あと'+pendingDiscard.remaining+'枚、捨てるカードを選んでください。';
+ document.getElementById('giveReceiveActions').style.display='none';
+ cardsBox.innerHTML='';
+ actor.hand.forEach(c=>{
+  const el=cardEl(c);
+  el.title='このカードを捨てる';
+  el.setAttribute('role','button');
+  el.setAttribute('tabindex','0');
+  const choose=()=>completeDiscard(c.id);
+  el.addEventListener('click',choose);
+  el.addEventListener('keydown',e=>{
+   if(e.key==='Enter'||e.key===' '){e.preventDefault();choose();}
+  });
+  cardsBox.append(el);
+ });
+ modal.classList.add('open');
+}
+
+function completeDiscard(cardId){
+ if(!pendingDiscard)return;
+ const pending=pendingDiscard;
+ const actor=state.players[pending.actorIndex];
+ const card=actor.hand.find(c=>c.id===cardId);
+ if(!card)return;
+ actor.hand=actor.hand.filter(c=>c.id!==cardId);
+ pending.remaining--;
+ log(actor.name+'が'+cardText(card)+'を捨てた');
+ if(pending.remaining>0&&actor.hand.length>0){
+  pendingDiscard=pending;
+  openDiscardModal();
+  render();
+  document.getElementById('notice').textContent='10捨て：あと'+pending.remaining+'枚、捨てるカードを選んでください';
+  return;
+ }
+ pendingDiscard=null;
+ document.getElementById('giveModal').classList.remove('open');
+ continueAfterPlay(actor,pending.byCpu,pending.clearNow,pending.skip);
 }
 
 function completeGive(cardId){
@@ -1082,3 +1146,5 @@ newGame();
 </script>
 </body>
 </html>
+
+
