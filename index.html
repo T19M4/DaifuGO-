@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -21,9 +20,8 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .label{font-size:13px;color:#bce8e7}
 .value{font-size:18px;font-weight:800;margin-top:4px}
 .players{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
-.player{min-height:94px;text-align:center;border:1px solid #3b8c79;background:#073e32;border-radius:12px;padding:10px}
+.player{min-height:80px;text-align:center;border:1px solid #3b8c79;background:#073e32;border-radius:12px;padding:10px}
 .player.active{outline:3px solid var(--gold);background:#15553f}
-.avatar{font-size:25px}
 .cards-back{letter-spacing:-5px;color:#9ac6ff;font-size:23px}
 .center{display:flex;justify-content:center;align-items:center;gap:26px;min-height:190px;margin:10px 0}
 .pile{width:105px;text-align:center}
@@ -57,7 +55,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .subtle{font-size:12px;color:#b8d9d8}
 .top-actions{display:flex;gap:8px;flex-wrap:wrap}
 
-/* 場のカード一覧を開く操作 */
+/* 場のカード一覧 */
 #tableCards{
  cursor:pointer;
  border:1px dashed #75c7a6;
@@ -67,63 +65,32 @@ button:disabled{opacity:.45;cursor:not-allowed}
 }
 #tableCards:hover{background:#ffffff12}
 #tableCards:focus-visible{outline:3px solid var(--gold)}
-.inspect-hint{
- color:#ffe88a;
- font-size:12px;
- text-align:center;
- margin-top:4px;
-}
+.inspect-hint{color:#ffe88a;font-size:12px;text-align:center;margin-top:4px}
 
-/* 場のカード一覧ポップアップ */
 .field-modal{
- position:fixed;
- inset:0;
- z-index:2000;
- display:none;
- align-items:center;
- justify-content:center;
- padding:14px;
+ position:fixed;inset:0;z-index:2000;display:none;
+ align-items:center;justify-content:center;padding:14px;
  background:#001a16dd;
 }
 .field-modal.open{display:flex}
 .field-box{
- width:min(650px,100%);
- max-height:85vh;
- overflow:auto;
- background:#07382e;
- border:2px solid var(--gold);
- border-radius:16px;
- padding:18px;
- box-shadow:0 12px 40px #0009;
+ width:min(700px,100%);max-height:85vh;overflow:auto;
+ background:#07382e;border:2px solid var(--gold);
+ border-radius:16px;padding:18px;box-shadow:0 12px 40px #0009;
 }
 .field-box h2{margin:0 0 8px;font-size:22px}
 .field-summary{color:#c7e9e2;font-size:14px;margin-bottom:14px}
-.field-card-list{
- display:flex;
- flex-wrap:wrap;
- justify-content:center;
- align-items:center;
- gap:8px;
- padding:14px 4px;
- min-height:100px;
+.field-card-list{display:flex;flex-direction:column;gap:14px;padding:10px 0}
+.history-play{
+ border:1px solid #478f81;border-radius:12px;padding:10px;
+ background:#062d3b;
 }
-.field-card-list .card{
- width:65px;
- height:94px;
- cursor:default;
-}
-.field-empty{
- color:#c7e9e2;
- text-align:center;
- padding:25px 10px;
- width:100%;
-}
-.field-close{
- display:block;
- width:100%;
- margin-top:12px;
- background:linear-gradient(#126b91,#074466);
-}
+.history-player{font-weight:800;color:#ffe88a;margin-bottom:8px}
+.history-cards{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
+.history-cards .card{width:58px;height:84px;cursor:default}
+.field-empty{color:#c7e9e2;text-align:center;padding:25px 10px}
+.field-close{display:block;width:100%;margin-top:12px}
+
 .q-modal{position:fixed;inset:0;background:#001a16dd;display:none;align-items:center;justify-content:center;padding:14px;z-index:1000}
 .q-modal.open{display:flex}
 .q-box{width:min(760px,100%);max-height:92vh;overflow:auto;background:#07382e;border:2px solid #ffd85a;border-radius:16px;padding:18px;box-shadow:0 12px 40px #0009}
@@ -136,6 +103,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .q-hand-cards .card{width:43px;height:64px;font-size:12px}
 .q-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
 .q-help{color:#d7eeee;font-size:13px}
+
 @media(max-width:900px){
  .layout{grid-template-columns:1fr}
  .rules{order:2}
@@ -155,10 +123,11 @@ button:disabled{opacity:.45;cursor:not-allowed}
  .playing{gap:3px}
  .field-box{padding:12px}
  .field-box h2{font-size:19px}
- .field-card-list{gap:6px;padding:10px 0}
- .field-card-list .card{width:49px;height:72px;padding:4px}
- .field-card-list .card .big{font-size:21px}
- .field-card-list .card .corner{font-size:12px}
+ .history-cards{gap:5px}
+ .history-cards .card{width:45px;height:67px;padding:4px}
+ .history-cards .card .big{font-size:20px}
+ .history-cards .card .corner{font-size:12px}
+ .q-box{padding:12px}
 }
 </style>
 </head>
@@ -189,10 +158,10 @@ button:disabled{opacity:.45;cursor:not-allowed}
   </div>
   <div style="flex:1;min-width:100px">
    <div class="label">場に出ているカード</div>
-   <div class="playing" id="tableCards" role="button" tabindex="0" aria-label="場に出ているカードの一覧を表示">
+   <div class="playing" id="tableCards" role="button" tabindex="0" aria-label="場に出されたカードの履歴を表示">
     <span class="subtle">最初のカードを出そう</span>
    </div>
-   <div class="inspect-hint">👆 タッチして場のカード一覧を確認</div>
+   <div class="inspect-hint">👆 クリック／タッチで、この場に出されたカードを確認</div>
    <div class="notice" id="notice" aria-live="polite">♦3を持つ人からスタート</div>
   </div>
   <div class="pile">
@@ -246,21 +215,22 @@ button:disabled{opacity:.45;cursor:not-allowed}
 <tr><td>都落ち</td><td>この版では未実装</td></tr>
 </tbody>
 </table>
-<div class="small"><b>最初のプレイヤー：</b> ♦3を持っている人。<br>CPUはカードを出した後、2秒待ってから次の行動をします。</div>
+<div class="small"><b>最初のプレイヤー：</b> ♦3を持っている人。<br>CPUはカードを出した後、少し待ってから次の行動をします。</div>
 <button class="rulebutton" id="hideRules">ルールを閉じる</button>
 </aside>
 </div>
 
-<!-- 場に出ているカードの一覧 -->
+<!-- 場のカード履歴ポップアップ -->
 <div class="field-modal" id="fieldModal" role="dialog" aria-modal="true" aria-labelledby="fieldTitle">
  <div class="field-box">
-  <h2 id="fieldTitle">🃏 場に出ているカード一覧</h2>
-  <div class="field-summary" id="fieldSummary">場のカードを確認できます。</div>
+  <h2 id="fieldTitle">🃏 この場に出されたカード一覧</h2>
+  <div class="field-summary" id="fieldSummary"></div>
   <div class="field-card-list" id="fieldCardList"></div>
   <button type="button" class="field-close" id="closeFieldModal">閉じる</button>
  </div>
 </div>
 
+<!-- Qボンバーの宣言画面 -->
 <div class="q-modal" id="qModal" role="dialog" aria-modal="true" aria-labelledby="qTitle">
  <div class="q-box">
   <h2 id="qTitle">Qボンバー：破壊する数字を宣言</h2>
@@ -285,12 +255,20 @@ const rankName=r=>({11:'J',12:'Q',13:'K',14:'A',15:'2',16:'ジョーカー'}[r]|
 const CPU_Q_RANKS=[4,7,10,12,14,15,16];
 let qSelectedRank=null;
 
+/*
+ turnCardHistory：現在進行中の場で出されたカード履歴
+ lastTurnCardHistory：直前に場が流れるまでのカード履歴
+*/
+let turnCardHistory=[];
+let lastTurnCardHistory=[];
+
 const suitColor=s=>s==='♥'||s==='♦'?'red':'';
 const rankPower=r=>{
  let p=({3:1,4:2,5:3,6:4,7:5,8:6,9:7,10:8,11:9,12:10,13:11,14:12,15:13,16:14})[r]||r;
  return state.jBack?15-p:p;
 };
 const cardText=c=>c.rank===16?'JOKER':rankName(c.rank)+c.suit;
+
 const cardEl=(c,extra='')=>{
  let d=document.createElement('div');
  d.className='card '+suitColor(c.suit)+' '+extra;
@@ -325,13 +303,20 @@ function newGame(){
  players.forEach(p=>p.hand.sort((a,b)=>a.rank-b.rank||SUITS.indexOf(a.suit)-SUITS.indexOf(b.suit)));
 
  let start=players.findIndex(p=>p.hand.some(c=>c.suit==='♦'&&c.rank===3));
+
  state={
   players,turn:start,deck:[],table:[],lastCards:[],lastPlayer:-1,
   passCount:0,selected:new Set(),jBack:false,lockSuit:null,effects:[],
   finished:false,finishOrder:[],pendingQ:false,turnSerial:0,firstMove:true
  };
 
+ turnCardHistory=[];
+ lastTurnCardHistory=[];
+
+ document.getElementById('log').innerHTML='';
  log('ゲーム開始。♦3を持つ'+players[start].name+'からスタート。');
+ closeFieldModal();
+ document.getElementById('qModal').classList.remove('open');
  render();
  if(start!==0)cpuTurn();
 }
@@ -355,7 +340,7 @@ function activeNames(){
  return a;
 }
 
-/* 場に出ているカードだけを一覧表示 */
+/* 場に出されたカードを、プレイヤーごとに履歴として表示 */
 function openFieldModal(){
  const modal=document.getElementById('fieldModal');
  const list=document.getElementById('fieldCardList');
@@ -363,19 +348,38 @@ function openFieldModal(){
 
  list.innerHTML='';
 
- // 手札・山札・過去のカードは表示せず、現在の場だけを表示
- const cards=state.table;
+ // 場が続いている場合は現在の場の履歴を表示。
+ // 場が流れた直後で履歴が空なら、直前の場の履歴を表示。
+ const history=turnCardHistory.length?turnCardHistory:lastTurnCardHistory;
 
- if(!cards.length){
-  summary.textContent='現在、場に出ているカードはありません。';
+ if(!history.length){
+  summary.textContent='まだこの場に出されたカードはありません。';
   const empty=document.createElement('div');
   empty.className='field-empty';
-  empty.textContent='カードが出されると、ここに一覧表示されます。';
+  empty.textContent='カードが出されると、ここに履歴が表示されます。';
   list.appendChild(empty);
  }else{
-  summary.textContent='現在の場：'+cards.length+'枚';
-  cards.forEach(c=>{
-   list.appendChild(cardEl(c));
+  const total=history.reduce((sum,entry)=>sum+entry.cards.length,0);
+  summary.textContent='この場で出されたカード：'+total+'枚／プレイ回数：'+history.length+'回';
+
+  history.forEach((entry,index)=>{
+   const group=document.createElement('div');
+   group.className='history-play';
+
+   const player=document.createElement('div');
+   player.className='history-player';
+   player.textContent=(index+1)+'回目：'+entry.player+'（'+entry.cards.length+'枚）';
+   group.appendChild(player);
+
+   const cards=document.createElement('div');
+   cards.className='history-cards';
+
+   entry.cards.forEach(c=>{
+    cards.appendChild(cardEl(c));
+   });
+
+   group.appendChild(cards);
+   list.appendChild(group);
   });
  }
 
@@ -388,16 +392,20 @@ function closeFieldModal(){
 }
 
 document.getElementById('tableCards').addEventListener('click',openFieldModal);
+
 document.getElementById('tableCards').addEventListener('keydown',e=>{
  if(e.key==='Enter'||e.key===' '){
   e.preventDefault();
   openFieldModal();
  }
 });
+
 document.getElementById('closeFieldModal').addEventListener('click',closeFieldModal);
+
 document.getElementById('fieldModal').addEventListener('click',e=>{
  if(e.target.id==='fieldModal')closeFieldModal();
 });
+
 document.addEventListener('keydown',e=>{
  if(e.key==='Escape'){
   closeFieldModal();
@@ -414,15 +422,17 @@ function render(){
 
  let ps=document.getElementById('players');
  ps.innerHTML='';
+
  state.players.forEach((p,i)=>{
   let d=document.createElement('div');
   d.className='player'+(i===state.turn&&!state.finished?' active':'');
-  d.innerHTML=`<div class="avatar">${i===0?'🧑🏻':'🤖'}</div><b>${p.name}</b><div>${p.finished?'上がり！':'残り '+p.hand.length+' 枚'}</div><div class="cards-back">${p.human?'':'▰ '.repeat(Math.min(p.hand.length,7))}</div>`;
+  d.innerHTML=`<b>${p.name}</b><div>${p.finished?'上がり！':'残り '+p.hand.length+' 枚'}</div><div class="cards-back">${p.human?'':'▰ '.repeat(Math.min(p.hand.length,7))}</div>`;
   ps.append(d);
  });
 
  let hand=document.getElementById('hand');
  hand.innerHTML='';
+
  state.players[0].hand.forEach(c=>{
   let d=cardEl(c,state.selected.has(c.id)?'selected':'');
   d.title=cardText(c);
@@ -439,18 +449,26 @@ function render(){
 
  let tc=document.getElementById('tableCards');
  tc.innerHTML='';
+
  state.table.forEach(c=>tc.append(cardEl(c)));
- if(!state.table.length)tc.innerHTML='<span class="subtle">最初のカードを出そう</span>';
+
+ if(!state.table.length){
+  tc.innerHTML='<span class="subtle">最初のカードを出そう</span>';
+ }
 
  let lc=document.getElementById('lastCard');
  lc.innerHTML='';
+
  if(state.lastCards.length)state.lastCards.forEach(c=>lc.append(cardEl(c)));
  else lc.textContent='—';
+
  document.getElementById('lastPlayer').textContent=state.lastPlayer<0?'なし':state.players[state.lastPlayer].name;
 
  let ef=document.getElementById('activeEffects');
  ef.innerHTML='';
+
  let names=activeNames();
+
  if(!names.length)ef.innerHTML='<span class="effect none">なし</span>';
  else names.forEach(n=>{
   let s=document.createElement('span');
@@ -467,10 +485,12 @@ function render(){
 function renderHandOnly(){
  let selected=new Set(state.selected);
  let hand=document.getElementById('hand');
+
  [...hand.children].forEach((d,i)=>{
   let c=state.players[0].hand[i];
   d.classList.toggle('selected',selected.has(c.id));
  });
+
  document.getElementById('playBtn').disabled=!selected.size||state.pendingQ;
 }
 
@@ -483,6 +503,7 @@ function validSet(cards){
  if(cards.some(c=>c.rank===16)&&cards.length>1)return false;
  if(cards.length===1)return true;
  if(cards.every(c=>c.rank===cards[0].rank))return true;
+
  return cards.every(c=>c.suit===cards[0].suit)&&
   cards.map(c=>c.rank).sort((a,b)=>a-b).every((r,i,a)=>i===0||r===a[i-1]+1);
 }
@@ -492,8 +513,13 @@ function canBeat(cards){
  if(!state.table.length)return true;
  if(cards.length!==state.table.length)return false;
  if(state.lockSuit&&cards.some(c=>c.suit!==state.lockSuit))return false;
+
  if(state.table.some(c=>c.rank===16)&&cards.length===1&&cards[0].rank===3&&cards[0].suit==='♠')return true;
- if(cards.length>1&&!cards.every(c=>c.rank===cards[0].rank))return cards[0].rank>state.table[0].rank;
+
+ if(cards.length>1&&!cards.every(c=>c.rank===cards[0].rank)){
+  return cards[0].rank>state.table[0].rank;
+ }
+
  return rankPower(cards[0].rank)>rankPower(state.table[0].rank);
 }
 
@@ -512,7 +538,17 @@ function advance(n=1){
  }
 }
 
+/* 場が流れたら、その場の履歴を保存して次の場へ */
 function clearTrick(startIndex){
+ if(turnCardHistory.length){
+  lastTurnCardHistory=turnCardHistory.map(entry=>({
+   player:entry.player,
+   cards:entry.cards.map(c=>({...c}))
+  }));
+ }
+
+ turnCardHistory=[];
+
  state.table=[];
  state.lastCards=[];
  state.passCount=0;
@@ -521,6 +557,7 @@ function clearTrick(startIndex){
  state.jBack=false;
  state.lastPlayer=-1;
  state.turn=startIndex;
+
  log('場が流れました。'+state.players[startIndex].name+'から再開。');
 }
 
@@ -528,15 +565,18 @@ function finishIfNeeded(p){
  if(p.hand.length===0&&!p.finished){
   let last=state.lastCards;
   let banned=last.some(c=>[15,16].includes(c.rank));
+
   if(banned){
    log(p.name+'は上がり禁止カードで反則。最後に出したカードを手札に戻します。');
    p.hand.push(...last);
    p.finished=false;
    return false;
   }
+
   p.finished=true;
   state.finishOrder.push(p.name);
   log(p.name+'が上がり！');
+
   if(state.players.filter(x=>!x.finished).length<=1){
    state.finished=true;
    let loser=state.players.find(x=>!x.finished);
@@ -544,6 +584,7 @@ function finishIfNeeded(p){
    return true;
   }
  }
+
  return false;
 }
 
@@ -551,6 +592,7 @@ function playCards(cards,byCpu=false){
  let p=current();
 
  if(state.pendingQ)return false;
+
  if(!cards.length||!canBeat(cards)){
   if(!byCpu)alert('そのカードは出せません。枚数・階段・場の強さを確認してください。');
   return false;
@@ -562,6 +604,13 @@ function playCards(cards,byCpu=false){
 
  removeCards(p,cards);
  state.selected.clear();
+
+ // 今回出されたカードを履歴に追加する
+ turnCardHistory.push({
+  player:p.name,
+  cards:cards.map(c=>({...c}))
+ });
+
  state.table=cards.slice();
  state.lastCards=cards.slice();
  state.lastPlayer=state.turn;
@@ -586,7 +635,9 @@ function playCards(cards,byCpu=false){
 
  if(cards.some(c=>c.rank===7)){
   state.effects.push('7渡し');
+
   let target=(state.turn+1)%4;
+
   if(p.hand.length){
    let give=p.hand.pop();
    state.players[target].hand.push(give);
@@ -612,6 +663,7 @@ function playCards(cards,byCpu=false){
  if(cards.some(c=>c.rank===10)){
   let n=cards.filter(c=>c.rank===10).length;
   state.effects.push('10捨て（'+n+'枚）');
+
   for(let i=0;i<n&&p.hand.length;i++){
    let tossed=p.hand.pop();
    log(p.name+'が'+cardText(tossed)+'を捨てた');
@@ -628,6 +680,7 @@ function playCards(cards,byCpu=false){
   state.effects.push('Qボンバー');
   state.pendingQ=true;
   render();
+
   document.getElementById('notice').textContent='Qボンバー：破壊する数字を必ず宣言してください';
 
   if(byCpu){
@@ -637,6 +690,7 @@ function playCards(cards,byCpu=false){
   }else{
    openQModal();
   }
+
   return true;
  }
 
@@ -662,8 +716,11 @@ function playCards(cards,byCpu=false){
  else advance(1);
 
  render();
+
  document.getElementById('notice').textContent=byCpu?p.name+'がカードを出しました':'カードを出しました';
+
  if(state.turn!==0)cpuTurn();
+
  return true;
 }
 
@@ -680,21 +737,26 @@ function openQModal(){
  preview.classList.remove('open');
  document.getElementById('qHandToggle').textContent='自分の手札を見る';
 
+ // Qボンバーで宣言できる数字
  const ranks=[...RANKS,16];
+
  ranks.forEach(rank=>{
   const b=document.createElement('button');
   b.type='button';
   b.textContent=rankName(rank);
+
   b.onclick=()=>{
    qSelectedRank=rank;
    [...opts.children].forEach(x=>x.classList.toggle('chosen',x===b));
    confirmBtn.disabled=false;
   };
+
   opts.appendChild(b);
  });
 
  const handBox=document.getElementById('qHandCards');
  handBox.innerHTML='';
+
  state.players[0].hand.forEach(c=>handBox.append(cardEl(c)));
 
  modal.classList.add('open');
@@ -703,6 +765,7 @@ function openQModal(){
 document.getElementById('qHandToggle').addEventListener('click',()=>{
  const preview=document.getElementById('qHandPreview');
  preview.classList.toggle('open');
+
  document.getElementById('qHandToggle').textContent=
   preview.classList.contains('open')?'手札を閉じる':'自分の手札を見る';
 });
@@ -713,6 +776,7 @@ document.getElementById('qConfirm').addEventListener('click',()=>{
  const rank=qSelectedRank;
  document.getElementById('qModal').classList.remove('open');
  state.pendingQ=false;
+
  const p=current();
  applyQ(rank,p);
 });
@@ -724,6 +788,7 @@ function applyQ(rank,p){
  }
 
  let destroyed=0;
+
  state.players.forEach(pl=>{
   let before=pl.hand.length;
   pl.hand=pl.hand.filter(c=>c.rank!==rank);
@@ -732,12 +797,14 @@ function applyQ(rank,p){
 
  state.selected.clear();
  state.pendingQ=false;
+
  log('Qボンバー：'+rankName(rank)+'を'+destroyed+'枚破壊');
 
  if(p.hand.length===0)finishIfNeeded(p);
 
  advance(1);
  render();
+
  if(state.turn!==0)cpuTurn();
 }
 
@@ -761,6 +828,7 @@ function pass(byCpu=false){
 
  advance(1);
  render();
+
  if(state.turn!==0)cpuTurn();
 }
 
@@ -775,7 +843,9 @@ function cpuTurn(){
 
   let options=[];
 
-  for(let c of p.hand)if(canBeat([c]))options.push([c]);
+  for(let c of p.hand){
+   if(canBeat([c]))options.push([c]);
+  }
 
   let byRank={};
   p.hand.forEach(c=>(byRank[c.rank]??=[]).push(c));
@@ -789,11 +859,14 @@ function cpuTurn(){
 
   for(let s of SUITS){
    let arr=p.hand.filter(c=>c.suit===s&&c.rank!==16).sort((a,b)=>a.rank-b.rank);
+
    for(let i=0;i<arr.length;i++){
     let run=[arr[i]];
+
     for(let j=i+1;j<arr.length;j++){
      if(arr[j].rank===run[run.length-1].rank+1)run.push(arr[j]);
      else if(arr[j].rank>run[run.length-1].rank+1)break;
+
      if(run.length>=3&&canBeat(run))options.push(run.slice());
     }
    }
