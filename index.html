@@ -56,7 +56,13 @@ button.secondary{background:#d8e2dc}
 #arrivalCard .rank{font-size:27px}
 #arrivalCard .suit{font-size:22px}
 footer{text-align:center;color:#c5d7ce;font-size:12px;padding:18px}
-@media(max-width:550px){h1{font-size:21px}.players{grid-template-columns:repeat(2,minmax(0,1fr))}.card{width:49px;height:72px}.card .rank{font-size:16px}main{padding:8px}}
+@media(max-width:550px){
+ h1{font-size:21px}
+ .players{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .card{width:49px;height:72px}
+ .card .rank{font-size:16px}
+ main{padding:8px}
+}
 </style>
 </head>
 <body>
@@ -171,6 +177,7 @@ function makeDeck(){
  deck.push({id:id++,suit:"JOKER",value:16,label:"JOKER"});
  return deck;
 }
+
 function shuffle(a){
  for(let i=a.length-1;i>0;i--){
   const j=Math.floor(Math.random()*(i+1));
@@ -178,18 +185,22 @@ function shuffle(a){
  }
  return a;
 }
+
 function rankName(v){
  if(v===16)return "ジョーカー";
  return RANKS.find(r=>r.value===v)?.label??String(v);
 }
+
 function cardName(c){
  return c.suit==="JOKER"?"ジョーカー":c.suit+c.label;
 }
+
 function escapeHTML(s){
  return String(s).replace(/[&<>"']/g,c=>({
   "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
  })[c]);
 }
+
 function cardHTML(c,extra=""){
  const red=c.suit==="♥"||c.suit==="♦";
  const joker=c.suit==="JOKER";
@@ -199,21 +210,25 @@ function cardHTML(c,extra=""){
   <div class="corner bottom"><div class="rank">${c.label}</div><div class="suit">${suit}</div></div>
  </div>`;
 }
+
 function activePlayers(){
  return game.players.filter(p=>!p.finished);
 }
+
 function log(s){
  game.logs.push(s);
  if(game.logs.length>200)game.logs.shift();
  $("history").innerHTML=game.logs.map(x=>`<div>• ${escapeHTML(x)}</div>`).join("");
  $("history").scrollTop=$("history").scrollHeight;
 }
+
 function strength(c){
  let v=c.value;
  if(game.revolution)v=18-v;
  if(game.jBack)v=18-v;
  return v;
 }
+
 function nextActive(from,steps=1){
  let i=from,moved=0;
  while(moved<steps){
@@ -221,6 +236,28 @@ function nextActive(from,steps=1){
   if(!game.players[i].finished)moved++;
  }
  return i;
+}
+
+/* 4止めに使えるカードの組み合わせを探す */
+function isFourStop(cards){
+ if(!cards||cards.length!==2)return false;
+
+ const fours=cards.filter(c=>c.value===4);
+ const jokers=cards.filter(c=>c.suit==="JOKER");
+
+ // 4を2枚、または4を1枚＋ジョーカー
+ return fours.length===2||
+  (fours.length===1&&jokers.length===1);
+}
+
+function findFourStop(index){
+ const hand=game.players[index].hand;
+ const fours=hand.filter(c=>c.value===4);
+ const joker=hand.find(c=>c.suit==="JOKER");
+
+ if(fours.length>=2)return {cards:fours.slice(0,2)};
+ if(fours.length>=1&&joker)return {cards:[fours[0],joker]};
+ return null;
 }
 
 function newGame(){
@@ -238,6 +275,7 @@ function newGame(){
   {name:"CPU 2",hand:[],finished:false,place:null,isHuman:false},
   {name:"CPU 3",hand:[],finished:false,place:null,isHuman:false}
  ];
+
  deck.forEach((c,i)=>players[i%4].hand.push(c));
  players.forEach(p=>p.hand.sort((a,b)=>a.value-b.value||a.suit.localeCompare(b.suit)));
 
@@ -256,7 +294,9 @@ function newGame(){
   logs:[],
   nextPlace:1,
   over:false,
-  records:[]
+  records:[],
+  // 8切りを止められるか確認中の情報
+  pendingEightCut:null
  };
 
  $("analysisPanel").classList.add("hidden");
@@ -269,6 +309,7 @@ function newGame(){
 
 function validPlay(cards,index){
  const p=game.players[index];
+
  if(!cards.length)return {ok:false,reason:"カードを選択してください。"};
  if(cards.some(c=>!p.hand.some(h=>h.id===c.id)))
   return {ok:false,reason:"手札にあるカードを選んでください。"};
@@ -278,10 +319,21 @@ function validPlay(cards,index){
   return {ok:false,reason:"最初は♦3を1枚だけ出してください。"};
  }
 
+ /*
+ 4止めの判定は通常の場の枚数・数字比較より先に行う。
+ 8切りを止めるときだけ、4のペアまたは4＋ジョーカーを許可する。
+ */
+ if(game.pendingEightCut&&game.pendingEightCut.responder===index){
+  if(isFourStop(cards))return {ok:true,fourStop:true};
+  return {ok:false,reason:"8切りを止めるには、4を2枚、または4とジョーカーを出してください。"};
+ }
+
  const fieldSingleJoker=game.field.length===1&&game.field[0].suit==="JOKER";
 
- if(!game.nineLock&&fieldSingleJoker&&cards.length===1&&cards[0].suit==="♠"&&cards[0].value===3)
+ if(!game.nineLock&&fieldSingleJoker&&cards.length===1&&
+    cards[0].suit==="♠"&&cards[0].value===3){
   return {ok:true,spadeThreeReturn:true};
+ }
 
  if(game.field.length===1&&cards.length===1){
   const fc=game.field[0],c=cards[0];
@@ -291,7 +343,7 @@ function validPlay(cards,index){
 
  const hasJoker=cards.some(c=>c.suit==="JOKER");
  if(hasJoker){
-  if(cards.length!==1)return {ok:false,reason:"ジョーカーは1枚で出してください。"};
+  if(cards.length!==1)return {ok:false,reason:"ジョーカーは通常1枚で出してください。"};
   if(game.field.length>1)return {ok:false,reason:"場の枚数と同じ枚数を出してください。"};
   if(fieldSingleJoker)return {ok:false,reason:"ジョーカーには♠3で返せます。"};
   return {ok:true};
@@ -315,6 +367,7 @@ function validPlay(cards,index){
 function render(){
  if(!game)return;
  const p=game.players[game.turn];
+
  $("status").textContent=game.over?"試合終了":
   `手番：${p.name}${p.isHuman?"（あなた）":""}${busy?" — 処理中...":""}`;
 
@@ -333,6 +386,7 @@ function render(){
  if(game.jBack)tags.push("Jバック中");
  if(game.shibariSuit)tags.push(game.shibariSuit+"縛り中");
  if(game.nineLock)tags.push("9の効果：特殊効果無効");
+ if(game.pendingEightCut)tags.push("8切り待機中：4止め可能");
  if(game.field.length)tags.push("場の枚数："+game.field.length);
  $("fieldInfo").textContent=tags.join(" / ")||"通常状態";
 
@@ -369,9 +423,11 @@ function render(){
  $("passBtn").disabled=!humanTurn||game.firstMove;
  $("clearBtn").disabled=!humanTurn;
 }
+
 function setMessage(s){
  $("message").textContent=s;
 }
+
 function finishPlayer(i){
  const p=game.players[i];
  if(p.finished||p.hand.length!==0)return;
@@ -380,15 +436,18 @@ function finishPlayer(i){
  log(`${p.name}が${p.place}位で上がり！`);
  if(i===0)setMessage(`あなたは${p.place}位で上がりました！`);
 }
+
 function checkGameOver(){
  const remaining=activePlayers();
  if(remaining.length>1)return false;
+
  if(remaining.length===1){
   const p=remaining[0];
   p.finished=true;
   p.place=game.nextPlace++;
   log(`${p.name}が${p.place}位。試合終了。`);
  }
+
  game.over=true;
  if(cpuTimer)clearTimeout(cpuTimer);
  cpuTimer=null;
@@ -398,6 +457,7 @@ function checkGameOver(){
  showAnalysis();
  return true;
 }
+
 function clearField(reason){
  game.field=[];
  game.fieldOwner=null;
@@ -406,7 +466,83 @@ function clearField(reason){
  game.jBack=false;
  game.nineLock=false;
  game.firstMove=false;
+ game.pendingEightCut=null;
  log(reason+" 場が流れ、縛り・Jバック・9の無効化が解除されました。");
+}
+
+/* 8切りが出た後の4止め判定 */
+async function beginEightCutResponse(ownerIndex){
+ const responder=nextActive(ownerIndex);
+
+ game.pendingEightCut={
+  owner:ownerIndex,
+  responder
+ };
+ game.turn=responder;
+ selected.clear();
+
+ const responsePlayer=game.players[responder];
+
+ if(responsePlayer.isHuman){
+  const combo=findFourStop(responder);
+
+  if(combo){
+   setMessage("8切りを止められます！4を2枚、または4とジョーカーを選んで出してください。パスすると8切りが成立します。");
+   render();
+   return;
+  }
+
+  // 人間に止められるカードがなければ、8切りが成立する
+  resolveEightCut();
+  return;
+ }
+
+ // CPUの4止め判定は即時。5秒待たない。
+ const combo=findFourStop(responder);
+
+ if(combo){
+  log(`${responsePlayer.name}が4止めを判定。`);
+  await playCards(responder,combo.cards);
+ }else{
+  resolveEightCut();
+ }
+}
+
+/* 4止めされなかった場合、8切りを成立させて元のプレイヤーへ */
+function resolveEightCut(){
+ if(!game.pendingEightCut)return;
+
+ const owner=game.pendingEightCut.owner;
+ clearField("8切り成立！");
+
+ game.turn=game.players[owner].finished?nextActive(owner):owner;
+ log("4止めは成立せず、8切りが発動しました。");
+
+ render();
+ scheduleCPU();
+}
+
+/* 4止めが成功した場合、場を流して止めた人のターンにする */
+function resolveFourStop(index){
+ const p=game.players[index];
+
+ log(`${p.name}の4止め成功！8切りを無効にしました。`);
+ clearField("4止め成功！");
+
+ finishPlayer(index);
+
+ if(checkGameOver())return;
+
+ // 4止めしたプレイヤーが上がっていなければ、もう一度その人のターン
+ game.turn=p.finished?nextActive(index):index;
+ selected.clear();
+
+ if(p.isHuman){
+  setMessage("4止め成功！場が流れました。続けてカードを出せます。");
+ }
+
+ render();
+ scheduleCPU();
 }
 
 function applyPlay(index,cards,validation){
@@ -448,6 +584,8 @@ function applyPlay(index,cards,validation){
  let extra="";
  if(validation.downNumber)extra="（ダウンナンバー）";
  if(validation.spadeThreeReturn)extra="（♠3返し）";
+ if(validation.fourStop)extra="（4止め）";
+
  log(`${p.name}：${cards.map(cardName).join("、")}を出した${extra}。`);
 
  game.records.push({
@@ -457,6 +595,7 @@ function applyPlay(index,cards,validation){
   handAfter:p.hand.length,
   fieldBefore:previousField.map(c=>({...c}))
  });
+
  if(wasFirst)log("♦3からゲーム開始。");
 }
 
@@ -478,9 +617,11 @@ async function chooseModal(title,description,items,mode){
   });
   $("choiceCards").appendChild(b);
  });
+
  $("modal").classList.add("open");
  return new Promise(resolve=>{modalResolver=resolve;});
 }
+
 function closeModal(value){
  $("modal").classList.remove("open");
  if(modalResolver){
@@ -489,6 +630,7 @@ function closeModal(value){
   r(value);
  }
 }
+
 $("modalConfirm").addEventListener("click",()=>{
  if(modalSelected===null){
   $("modalDescription").textContent="1つ選択してください。";
@@ -562,18 +704,13 @@ async function applyTenDiscard(index){
 
  const card=p.hand.find(c=>c.id===chosen.id);
  if(!card)return;
+
  p.hand=p.hand.filter(c=>c.id!==card.id);
  game.removedCards.push(card);
  log(`${p.name}が10捨てで${cardName(card)}を捨てた。`);
  finishPlayer(index);
 }
 
-/*
- Qボンバー：
- 出したQの枚数だけ、消す数字を選ぶ。
- 同じ数字は重複選択できない。
- 選んだ数字のカードを全員の手札から取り除く。
-*/
 async function applyQBomber(index,qCount){
  const p=game.players[index];
  const availableRanks=RANKS.map(r=>({value:r.value})).concat([{value:16}]);
@@ -599,8 +736,6 @@ async function applyQBomber(index,qCount){
    chosenRanks.push(chosen);
   }
  }else{
-  // CPUは手札全体から、よく残っている数字を優先して選ぶ。
-  // 同じ数字を二度選ばない。
   const counts={};
   game.players.forEach(pl=>{
    pl.hand.forEach(c=>{
@@ -609,7 +744,7 @@ async function applyQBomber(index,qCount){
   });
 
   const ranked=availableRanks
-   .filter(r=>availableRanks.some(x=>x.value===r.value))
+   .slice()
    .sort((a,b)=>(counts[b.value]||0)-(counts[a.value]||0));
 
   for(const r of ranked){
@@ -639,14 +774,32 @@ async function applyQBomber(index,qCount){
 
 async function playCards(index,cards){
  const validation=validPlay(cards,index);
+
  if(!validation.ok){
   if(game.players[index].isHuman)setMessage(validation.reason);
   return false;
  }
 
+ // 4止め専用処理。通常のカード効果を発動させず、手番を維持する。
+ if(validation.fourStop&&game.pendingEightCut){
+  const p=game.players[index];
+
+  p.hand=p.hand.filter(h=>!cards.some(c=>c.id===h.id));
+  game.records.push({
+   player:index,name:p.name,move:"play",
+   cards:cards.map(c=>({...c})),
+   handBefore:p.hand.length+cards.length,
+   handAfter:p.hand.length,
+   fieldBefore:game.field.map(c=>({...c}))
+  });
+
+  log(`${p.name}：${cards.map(cardName).join("、")}で4止め！`);
+  resolveFourStop(index);
+  return true;
+ }
+
  applyPlay(index,cards,validation);
 
- // 9が出たとき、または既に9の効果中なら特殊効果を発動しない
  const effectBlocked=game.nineLock;
 
  if(!effectBlocked){
@@ -654,29 +807,31 @@ async function playCards(index,cards){
   const tenCount=cards.filter(c=>c.value===10).length;
   const qCount=cards.filter(c=>c.value===12).length;
 
-  // 7を複数枚出しても、7渡しはこの実装では1回
   if(sevenCount>0)await applySevenGive(index);
 
-  // 10捨て：出した10の枚数分、1枚ずつ捨てる
   for(let n=0;n<tenCount;n++){
    if(game.players[index].hand.length===0)break;
    await applyTenDiscard(index);
   }
 
-  // Qボンバー：出したQの枚数分、数字を選ぶ
   if(qCount>0)await applyQBomber(index,qCount);
  }
 
  if(checkGameOver())return true;
+
  finishPlayer(index);
  if(checkGameOver())return true;
 
+ // 8切りはここで即時に流さず、次のプレイヤーに4止めの機会を与える。
  if(!effectBlocked&&cards.some(c=>c.value===8)){
-  clearField("8切り！");
-  game.turn=nextActive(index);
- }else if(!effectBlocked&&validation.spadeThreeReturn){
+  setMessage("8切り！次のプレイヤーが4止めできるか確認します。");
+  await beginEightCutResponse(index);
+  return true;
+ }
+
+ if(!effectBlocked&&validation.spadeThreeReturn){
   clearField("♠3返し！");
-  game.turn=nextActive(index);
+  game.turn=game.players[index].finished?nextActive(index):nextActive(index);
  }else{
   game.turn=nextActive(index,!effectBlocked&&cards.some(c=>c.value===5)?2:1);
  }
@@ -686,11 +841,6 @@ async function playCards(index,cards){
  return true;
 }
 
-/*
- CPUの判定は即時に行う。
- 有効な手が見つからない場合は、5秒待たずにパスする。
- 有効なカードを出すときだけ5秒待つ。
-*/
 function findCPUMove(index){
  const p=game.players[index];
  const hand=[...p.hand].sort((a,b)=>strength(a)-strength(b));
@@ -698,6 +848,11 @@ function findCPUMove(index){
  if(game.firstMove){
   const c=hand.find(c=>c.suit==="♦"&&c.value===3);
   return c?{cards:[c]}:null;
+ }
+
+ // 8切りに対するCPUの4止めは、通常の強さ比較より優先する。
+ if(game.pendingEightCut&&game.pendingEightCut.responder===index){
+  return findFourStop(index);
  }
 
  if(!game.nineLock&&game.field.length===1&&game.field[0].suit==="JOKER"){
@@ -737,6 +892,7 @@ function findCPUMove(index){
 
  const joker=hand.find(c=>c.suit==="JOKER");
  if(joker&&validPlay([joker],index).ok)return {cards:[joker]};
+
  return null;
 }
 
@@ -752,16 +908,33 @@ function scheduleCPU(){
   return;
  }
 
- // ここで即座に判定。判定のためにタイマーを使わない。
+ // 4止めの確認は待たずに実行する。
+ if(game.pendingEightCut&&game.pendingEightCut.responder===index){
+  const combo=findFourStop(index);
+
+  if(combo){
+   busy=true;
+   render();
+   playCards(index,combo.cards).finally(()=>{
+    busy=false;
+    render();
+    scheduleCPU();
+   });
+  }else{
+   resolveEightCut();
+  }
+  return;
+ }
+
+ // 通常のCPU判定も即時。出せない場合は即パス。
  const move=findCPUMove(index);
 
- // 出せないなら即パス
  if(!move){
   doPass(index,true);
   return;
  }
 
- // 出せるカードがある場合のみ5秒待つ
+ // 通常のカードを出すときだけ5秒待つ。
  busy=true;
  render();
 
@@ -779,6 +952,14 @@ function scheduleCPU(){
 
 function doPass(index,automatic=false){
  if(game.over||game.firstMove)return;
+
+ // 4止めの機会にパスしたら、8切りが成立する。
+ if(game.pendingEightCut&&game.pendingEightCut.responder===index){
+  log(`${game.players[index].name}が4止めせずパス。`);
+  if(index===0&&!automatic)setMessage("パスしました。8切りが成立します。");
+  resolveEightCut();
+  return;
+ }
 
  const p=game.players[index];
  game.passes++;
@@ -812,16 +993,21 @@ $("playBtn").addEventListener("click",async()=>{
 
  const cards=game.players[0].hand.filter(c=>selected.has(c.id));
  const v=validPlay(cards,0);
- if(!v.ok){setMessage(v.reason);return;}
+
+ if(!v.ok){
+  setMessage(v.reason);
+  return;
+ }
 
  busy=true;
  render();
+
  await playCards(0,cards);
+
  selected.clear();
  busy=false;
  render();
  scheduleCPU();
- setMessage("カードを出しました。");
 });
 
 $("passBtn").addEventListener("click",()=>{
@@ -829,14 +1015,17 @@ $("passBtn").addEventListener("click",()=>{
  selected.clear();
  doPass(0,false);
 });
+
 $("clearBtn").addEventListener("click",()=>{
  selected.clear();
  render();
 });
+
 $("newGame").addEventListener("click",newGame);
 
 function showAnalysis(){
  $("analysisPanel").classList.remove("hidden");
+
  const me=game.players[0];
  const mine=game.records.filter(r=>r.player===0);
  const plays=mine.filter(r=>r.move==="play");
@@ -849,10 +1038,15 @@ function showAnalysis(){
   findings.push(["勝利！","今回は1位です。手札を減らせたプレイや特殊効果の使い方を次の試合にも活かしましょう。"]);
  }else{
   findings.push(["終了時の手札",`試合終了時に${me.hand.length}枚残りました。場が流れたタイミングで出せるカードを探し、手札を減らすことを意識しましょう。`]);
-  if(passes.length)findings.push(["パスのタイミング",`${passes.length}回パスしました。場が流れた後に出せるカードがなかったか振り返りましょう。`]);
+
+  if(passes.length){
+   findings.push(["パスのタイミング",`${passes.length}回パスしました。場が流れた後に出せるカードがなかったか振り返りましょう。`]);
+  }
+
   findings.push(["強いカードの使い方",strong.length?
    `強いカードを含むプレイが${strong.length}回あります。相手の上がりを止める場面と、自分の手札を減らす場面を意識しましょう。`:
    "強いカードを使うタイミングを考えてみましょう。"]);
+
   findings.push(["特殊効果",special.length?
    `特殊効果を含むプレイが${special.length}回あります。9の無効化も含め、効果を使った結果を振り返りましょう。`:
    "特殊効果を状況に合わせて活用できるか考えてみましょう。"]);
@@ -866,6 +1060,7 @@ function showAnalysis(){
    <li>相手の手札が少ないときは、強いカードで上がりを防ぐことを検討する。</li>
    <li>Qボンバーは出したQの枚数分だけ数字を選べる。</li>
    <li>9が場に出ている間は、特殊効果が無効になる。</li>
+   <li>8切りには4を2枚、または4とジョーカーで4止めを狙える。</li>
   </ol>`;
 }
 
