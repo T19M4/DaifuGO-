@@ -28,7 +28,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .center{display:flex;justify-content:center;align-items:center;gap:26px;min-height:190px;margin:10px 0}
 .pile{width:105px;text-align:center}
 .playing{min-height:122px;display:flex;justify-content:center;align-items:center;gap:4px;flex-wrap:wrap}
-.card{width:57px;height:82px;border-radius:8px;background:#fff;color:#151515;border:1px solid #d5d5d5;box-shadow:0 3px 7px #001b1880;display:flex;flex-direction:column;justify-content:space-between;padding:5px;font-weight:800;user-select:none;position:relative}
+.card{width:57px;height:82px;border-radius:8px;background:#fff;color:#151515;border:1px solid #d5d5d5;box-shadow:0 3px 7px #001b1880;display:flex;flex-direction:column;justify-content:space-between;padding:5px;font-weight:800;user-select:none;position:relative;flex-shrink:0}
 .card.red{color:#d51f2a}
 .card .big{font-size:26px;align-self:center}
 .card .corner{font-size:14px;line-height:1}
@@ -56,6 +56,74 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .log div{border-bottom:1px solid #245d5a;padding:3px 0}
 .subtle{font-size:12px;color:#b8d9d8}
 .top-actions{display:flex;gap:8px;flex-wrap:wrap}
+
+/* 場のカード一覧を開く操作 */
+#tableCards{
+ cursor:pointer;
+ border:1px dashed #75c7a6;
+ border-radius:12px;
+ padding:8px;
+ transition:background .15s;
+}
+#tableCards:hover{background:#ffffff12}
+#tableCards:focus-visible{outline:3px solid var(--gold)}
+.inspect-hint{
+ color:#ffe88a;
+ font-size:12px;
+ text-align:center;
+ margin-top:4px;
+}
+
+/* 場のカード一覧ポップアップ */
+.field-modal{
+ position:fixed;
+ inset:0;
+ z-index:2000;
+ display:none;
+ align-items:center;
+ justify-content:center;
+ padding:14px;
+ background:#001a16dd;
+}
+.field-modal.open{display:flex}
+.field-box{
+ width:min(650px,100%);
+ max-height:85vh;
+ overflow:auto;
+ background:#07382e;
+ border:2px solid var(--gold);
+ border-radius:16px;
+ padding:18px;
+ box-shadow:0 12px 40px #0009;
+}
+.field-box h2{margin:0 0 8px;font-size:22px}
+.field-summary{color:#c7e9e2;font-size:14px;margin-bottom:14px}
+.field-card-list{
+ display:flex;
+ flex-wrap:wrap;
+ justify-content:center;
+ align-items:center;
+ gap:8px;
+ padding:14px 4px;
+ min-height:100px;
+}
+.field-card-list .card{
+ width:65px;
+ height:94px;
+ cursor:default;
+}
+.field-empty{
+ color:#c7e9e2;
+ text-align:center;
+ padding:25px 10px;
+ width:100%;
+}
+.field-close{
+ display:block;
+ width:100%;
+ margin-top:12px;
+ background:linear-gradient(#126b91,#074466);
+}
 .q-modal{position:fixed;inset:0;background:#001a16dd;display:none;align-items:center;justify-content:center;padding:14px;z-index:1000}
 .q-modal.open{display:flex}
 .q-box{width:min(760px,100%);max-height:92vh;overflow:auto;background:#07382e;border:2px solid #ffd85a;border-radius:16px;padding:18px;box-shadow:0 12px 40px #0009}
@@ -82,8 +150,15 @@ button:disabled{opacity:.45;cursor:not-allowed}
  .card{width:44px;height:68px;padding:4px}
  .card .big{font-size:21px}
  .hand{gap:2px}
- .center{gap:10px}
- .pile{width:90px}
+ .center{gap:5px}
+ .pile{width:75px}
+ .playing{gap:3px}
+ .field-box{padding:12px}
+ .field-box h2{font-size:19px}
+ .field-card-list{gap:6px;padding:10px 0}
+ .field-card-list .card{width:49px;height:72px;padding:4px}
+ .field-card-list .card .big{font-size:21px}
+ .field-card-list .card .corner{font-size:12px}
 }
 </style>
 </head>
@@ -114,7 +189,10 @@ button:disabled{opacity:.45;cursor:not-allowed}
   </div>
   <div style="flex:1;min-width:100px">
    <div class="label">場に出ているカード</div>
-   <div class="playing" id="tableCards"><span class="subtle">最初のカードを出そう</span></div>
+   <div class="playing" id="tableCards" role="button" tabindex="0" aria-label="場に出ているカードの一覧を表示">
+    <span class="subtle">最初のカードを出そう</span>
+   </div>
+   <div class="inspect-hint">👆 タッチして場のカード一覧を確認</div>
    <div class="notice" id="notice" aria-live="polite">♦3を持つ人からスタート</div>
   </div>
   <div class="pile">
@@ -171,6 +249,16 @@ button:disabled{opacity:.45;cursor:not-allowed}
 <div class="small"><b>最初のプレイヤー：</b> ♦3を持っている人。<br>CPUはカードを出した後、2秒待ってから次の行動をします。</div>
 <button class="rulebutton" id="hideRules">ルールを閉じる</button>
 </aside>
+</div>
+
+<!-- 場に出ているカードの一覧 -->
+<div class="field-modal" id="fieldModal" role="dialog" aria-modal="true" aria-labelledby="fieldTitle">
+ <div class="field-box">
+  <h2 id="fieldTitle">🃏 場に出ているカード一覧</h2>
+  <div class="field-summary" id="fieldSummary">場のカードを確認できます。</div>
+  <div class="field-card-list" id="fieldCardList"></div>
+  <button type="button" class="field-close" id="closeFieldModal">閉じる</button>
+ </div>
 </div>
 
 <div class="q-modal" id="qModal" role="dialog" aria-modal="true" aria-labelledby="qTitle">
@@ -267,6 +355,55 @@ function activeNames(){
  return a;
 }
 
+/* 場に出ているカードだけを一覧表示 */
+function openFieldModal(){
+ const modal=document.getElementById('fieldModal');
+ const list=document.getElementById('fieldCardList');
+ const summary=document.getElementById('fieldSummary');
+
+ list.innerHTML='';
+
+ // 手札・山札・過去のカードは表示せず、現在の場だけを表示
+ const cards=state.table;
+
+ if(!cards.length){
+  summary.textContent='現在、場に出ているカードはありません。';
+  const empty=document.createElement('div');
+  empty.className='field-empty';
+  empty.textContent='カードが出されると、ここに一覧表示されます。';
+  list.appendChild(empty);
+ }else{
+  summary.textContent='現在の場：'+cards.length+'枚';
+  cards.forEach(c=>{
+   list.appendChild(cardEl(c));
+  });
+ }
+
+ modal.classList.add('open');
+ document.getElementById('closeFieldModal').focus();
+}
+
+function closeFieldModal(){
+ document.getElementById('fieldModal').classList.remove('open');
+}
+
+document.getElementById('tableCards').addEventListener('click',openFieldModal);
+document.getElementById('tableCards').addEventListener('keydown',e=>{
+ if(e.key==='Enter'||e.key===' '){
+  e.preventDefault();
+  openFieldModal();
+ }
+});
+document.getElementById('closeFieldModal').addEventListener('click',closeFieldModal);
+document.getElementById('fieldModal').addEventListener('click',e=>{
+ if(e.target.id==='fieldModal')closeFieldModal();
+});
+document.addEventListener('keydown',e=>{
+ if(e.key==='Escape'){
+  closeFieldModal();
+ }
+});
+
 function render(){
  if(!state)return;
 
@@ -302,7 +439,7 @@ function render(){
 
  let tc=document.getElementById('tableCards');
  tc.innerHTML='';
- (state.table.length?state.table:[]).forEach(c=>tc.append(cardEl(c)));
+ state.table.forEach(c=>tc.append(cardEl(c)));
  if(!state.table.length)tc.innerHTML='<span class="subtle">最初のカードを出そう</span>';
 
  let lc=document.getElementById('lastCard');
@@ -419,7 +556,6 @@ function playCards(cards,byCpu=false){
   return false;
  }
 
- // 場がジョーカー1枚で、♠3を出した場合は出した人が続けて行動する
  const spadeThreeReversal=
   state.table.length===1&&state.table[0].rank===16&&
   cards.length===1&&cards[0].rank===3&&cards[0].suit==='♠';
@@ -495,7 +631,6 @@ function playCards(cards,byCpu=false){
   document.getElementById('notice').textContent='Qボンバー：破壊する数字を必ず宣言してください';
 
   if(byCpu){
-   // CPUは4・7・10・Q・A（1）・2・ジョーカーから宣言する
    const rank=CPU_Q_RANKS[Math.floor(Math.random()*CPU_Q_RANKS.length)];
    log(p.name+'のQボンバー宣言：'+rankName(rank));
    applyQ(rank,p);
@@ -517,7 +652,6 @@ function playCards(cards,byCpu=false){
  }
 
  if(clearNow){
-  // 場を流したあとも、効果を発動したプレイヤーのターン
   clearTrick(state.turn);
   render();
   if(state.turn!==0)cpuTurn();
@@ -546,7 +680,6 @@ function openQModal(){
  preview.classList.remove('open');
  document.getElementById('qHandToggle').textContent='自分の手札を見る';
 
- // 人間側は宣言する数字を選択できる。キャンセルはできない。
  const ranks=[...RANKS,16];
  ranks.forEach(rank=>{
   const b=document.createElement('button');
@@ -560,7 +693,6 @@ function openQModal(){
   opts.appendChild(b);
  });
 
- // 手札表示は確認専用。選択やターン進行には影響しない。
  const handBox=document.getElementById('qHandCards');
  handBox.innerHTML='';
  state.players[0].hand.forEach(c=>handBox.append(cardEl(c)));
