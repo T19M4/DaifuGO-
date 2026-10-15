@@ -55,6 +55,7 @@ button.secondary{background:#d8e2dc}
 #arrivalCard .card{width:85px;height:120px;border-width:3px}
 #arrivalCard .rank{font-size:27px}
 #arrivalCard .suit{font-size:22px}
+#modalHandCards{max-height:35vh;overflow:auto}
 footer{text-align:center;color:#c5d7ce;font-size:12px;padding:18px}
 @media(max-width:550px){
  h1{font-size:21px}
@@ -62,6 +63,7 @@ footer{text-align:center;color:#c5d7ce;font-size:12px;padding:18px}
  .card{width:49px;height:72px}
  .card .rank{font-size:16px}
  main{padding:8px}
+ .modalbox{padding:14px}
 }
 </style>
 </head>
@@ -118,7 +120,7 @@ footer{text-align:center;color:#c5d7ce;font-size:12px;padding:18px}
  <section class="panel hidden" id="analysisPanel">
   <h2>試合終了後のAI風アドバイス</h2>
   <div id="analysis"></div>
-  <p class="small">試合中のプレイ記録・パス・特殊カードの使用状況をもとにした簡易分析です。外部AIやインターネット通信は使用しません。</p>
+  <p class="small">プレイ記録・パス・特殊カードの使用状況をもとにした簡易分析です。外部AIやインターネット通信は使用しません。</p>
  </section>
 </main>
 
@@ -127,6 +129,16 @@ footer{text-align:center;color:#c5d7ce;font-size:12px;padding:18px}
   <h2 id="modalTitle">カードを選択</h2>
   <p id="modalDescription"></p>
   <div id="choiceCards"></div>
+
+  <div class="row" style="margin-top:12px;justify-content:center">
+   <button id="toggleHandView" class="secondary" type="button">手札を見る</button>
+  </div>
+
+  <div id="modalHandView" class="hidden">
+   <p class="small">手札を確認している間、ゲームは進みません。</p>
+   <div id="modalHandCards" class="hand"></div>
+  </div>
+
   <div class="row" style="margin-top:16px;justify-content:center">
    <button id="modalConfirm">決定</button>
    <button id="modalCancel" class="secondary">キャンセル</button>
@@ -165,6 +177,7 @@ let busy=false;
 let cpuTimer=null;
 let modalResolver=null;
 let modalSelected=null;
+let handViewOpen=false;
 
 function makeDeck(){
  const deck=[];
@@ -206,8 +219,8 @@ function cardHTML(c,extra=""){
  const joker=c.suit==="JOKER";
  const suit=joker?"🃏":c.suit;
  return `<div class="card ${red?"red":""} ${joker?"joker":""} ${extra}">
-  <div class="corner"><div class="rank">${c.label}</div><div class="suit">${suit}</div></div>
-  <div class="corner bottom"><div class="rank">${c.label}</div><div class="suit">${suit}</div></div>
+  <div class="corner"><div class="rank">${escapeHTML(c.label)}</div><div class="suit">${suit}</div></div>
+  <div class="corner bottom"><div class="rank">${escapeHTML(c.label)}</div><div class="suit">${suit}</div></div>
  </div>`;
 }
 
@@ -239,7 +252,6 @@ function nextActive(from,steps=1){
  return i;
 }
 
-/* 4止めに使えるカードの組み合わせ */
 function isFourStop(cards){
  if(!cards||cards.length!==2)return false;
  const fours=cards.filter(c=>c.value===4);
@@ -292,7 +304,6 @@ function newGame(){
   over:false,
   records:[],
   pendingEightCut:null,
-  // 5スキップ直後のCPUの待ち時間。通常はnull。
   nextCpuDelay:null
  };
 
@@ -393,8 +404,8 @@ function render(){
   const suit=joker?"🃏":c.suit;
   return `<div class="card pick ${red?"red":""} ${joker?"joker":""} ${selected.has(c.id)?"selected":""}"
    data-id="${c.id}" role="button" tabindex="0" aria-label="${cardName(c)}">
-   <div class="corner"><div class="rank">${c.label}</div><div class="suit">${suit}</div></div>
-   <div class="corner bottom"><div class="rank">${c.label}</div><div class="suit">${suit}</div></div>
+   <div class="corner"><div class="rank">${escapeHTML(c.label)}</div><div class="suit">${suit}</div></div>
+   <div class="corner bottom"><div class="rank">${escapeHTML(c.label)}</div><div class="suit">${suit}</div></div>
   </div>`;
  }).join("");
 
@@ -482,7 +493,6 @@ async function beginEightCutResponse(ownerIndex){
   return;
  }
 
- // CPUは4止めを即時判定し、待ち時間を入れない
  const combo=findFourStop(responder);
  if(combo){
   log(`${responsePlayer.name}が4止めを判定。`);
@@ -577,6 +587,11 @@ async function chooseModal(title,description,items,mode){
  $("choiceCards").innerHTML="";
  modalSelected=null;
 
+ handViewOpen=false;
+ $("modalHandView").classList.add("hidden");
+ $("modalHandCards").innerHTML="";
+ $("toggleHandView").textContent="手札を見る";
+
  items.forEach(item=>{
   const b=document.createElement("button");
   b.className="choice";
@@ -596,6 +611,8 @@ async function chooseModal(title,description,items,mode){
 
 function closeModal(value){
  $("modal").classList.remove("open");
+ handViewOpen=false;
+ $("modalHandView").classList.add("hidden");
  if(modalResolver){
   const r=modalResolver;
   modalResolver=null;
@@ -603,9 +620,19 @@ function closeModal(value){
  }
 }
 
+$("toggleHandView").addEventListener("click",()=>{
+ handViewOpen=!handViewOpen;
+ $("modalHandView").classList.toggle("hidden",!handViewOpen);
+ $("toggleHandView").textContent=handViewOpen?"手札を隠す":"手札を見る";
+
+ if(handViewOpen){
+  $("modalHandCards").innerHTML=game.players[0].hand.map(c=>cardHTML(c)).join("");
+ }
+});
+
 $("modalConfirm").addEventListener("click",()=>{
  if(modalSelected===null){
-  $("modalDescription").textContent="1つ選択してください。";
+  $("modalDescription").textContent="1つ選択してください。選択してから「決定」を押してください。";
   return;
  }
  closeModal(modalSelected);
@@ -637,7 +664,7 @@ async function applySevenGive(index){
    `${target.name}に渡すカードを1枚選んでください。`,
    [...giver.hand],"card"
   );
-  if(!chosen)return;
+  if(!chosen)return applySevenGive(index);
  }else{
   chosen=[...giver.hand].sort((a,b)=>b.value-a.value)[0];
  }
@@ -662,6 +689,7 @@ async function applyTenDiscard(index){
 
  if(p.isHuman){
   chosen=await chooseModal("10捨て","捨てるカードを手札から1枚選択してください。",[...p.hand],"card");
+  if(!chosen)return applyTenDiscard(index);
  }else{
   chosen=[...p.hand].sort((a,b)=>b.value-a.value)[0];
  }
@@ -681,16 +709,17 @@ async function applyQBomber(index,qCount){
  const chosenRanks=[];
 
  if(p.isHuman){
-  for(let n=0;n<qCount;n++){
+  while(chosenRanks.length<qCount){
    const remaining=availableRanks.filter(r=>!chosenRanks.some(c=>c.value===r.value));
    const chosen=await chooseModal(
-    `Qボンバー (${n+1}/${qCount})`,
-    `消したい数字を選択してください。あと${qCount-n}回選べます。`,
+    `Qボンバー (${chosenRanks.length+1}/${qCount})`,
+    `消したい数字を選び、「決定」を押してください。手札を見るだけでは宣言されません。あと${qCount-chosenRanks.length}回選べます。`,
     remaining,"rank"
    );
+
    if(!chosen){
-    log("Qボンバーの選択がキャンセルされました。");
-    break;
+    setMessage("Qボンバーの宣言を完了してください。手札確認は「手札を見る」から行えます。");
+    continue;
    }
    chosenRanks.push(chosen);
   }
@@ -704,8 +733,6 @@ async function applyQBomber(index,qCount){
   }
  }
 
- if(chosenRanks.length===0)return;
-
  const removed=[];
  for(const chosen of chosenRanks){
   const value=chosen.value;
@@ -714,11 +741,14 @@ async function applyQBomber(index,qCount){
    removed.push(...hit);
    pl.hand=pl.hand.filter(c=>c.value!==value);
   }
-  log(`Qボンバー：${rankName(value)}を選択。`);
+  log(`Qボンバー：${rankName(value)}を宣言。`);
  }
+
  game.removedCards.push(...removed);
- log(`Qボンバー終了。${chosenRanks.length}種類を選び、${removed.length}枚のカードが消えた。`);
+ log(`Qボンバー終了。${chosenRanks.length}種類を宣言し、${removed.length}枚のカードが消えた。`);
+
  for(let i=0;i<game.players.length;i++)finishPlayer(i);
+ render();
 }
 
 async function playCards(index,cards){
@@ -728,7 +758,6 @@ async function playCards(index,cards){
   return false;
  }
 
- // 4止め専用処理
  if(validation.fourStop&&game.pendingEightCut){
   const p=game.players[index];
   const before=p.hand.length;
@@ -776,11 +805,6 @@ async function playCards(index,cards){
   const fiveSkip=!effectBlocked&&cards.some(c=>c.value===5);
   const stillActive=activePlayers();
 
-  /*
-   * 5スキップの修正：
-   * 残り2人なら、相手を飛ばした結果、必ず出した本人の手番に戻す。
-   * それ以外は次のアクティブプレイヤーを1人飛ばす。
-   */
   if(fiveSkip&&stillActive.length===2&&!game.players[index].finished){
    game.turn=index;
    log("5スキップ：残り2人のため、相手の手番を飛ばして自分の手番に戻ります。");
@@ -788,10 +812,6 @@ async function playCards(index,cards){
    game.turn=nextActive(index,fiveSkip?2:1);
   }
 
-  /*
-   * 5スキップ後、次の手番がCPUなら思考時間を2.2秒にする。
-   * 人間の手番なら、後のCPUターンに誤って持ち越さない。
-   */
   if(fiveSkip&&game.turn!==0){
    game.nextCpuDelay=2200;
    log("5スキップ後のCPU待ち時間を2.2秒に設定しました。");
@@ -868,7 +888,6 @@ function scheduleCPU(){
   return;
  }
 
- // CPUの4止めはクールタイムなしで即時判定
  if(game.pendingEightCut&&game.pendingEightCut.responder===index){
   const combo=findFourStop(index);
   if(combo){
@@ -885,7 +904,6 @@ function scheduleCPU(){
   return;
  }
 
- // 出せるカードがないCPUは即時パス
  const move=findCPUMove(index);
  if(!move){
   doPass(index,true);
@@ -895,7 +913,6 @@ function scheduleCPU(){
  busy=true;
  render();
 
- // 5スキップ直後は2.2秒。それ以外の通常プレイは5秒。
  const delay=game.nextCpuDelay!==null?game.nextCpuDelay:5000;
  game.nextCpuDelay=null;
 
@@ -975,7 +992,6 @@ $("clearBtn").addEventListener("click",()=>{
 
 $("newGame").addEventListener("click",newGame);
 
-/* 試合全体のプレイ履歴を集計し、状況に応じたアドバイスを作る */
 function showAnalysis(){
  $("analysisPanel").classList.remove("hidden");
 
@@ -998,7 +1014,6 @@ function showAnalysis(){
 
  const highCards=allPlayed.filter(c=>c.value>=14||c.suit==="JOKER").length;
  const multiPlays=plays.filter(r=>(r.cards||[]).length>=2).length;
- const openingHand=mine.length?mine[0].handBefore:me.hand.length;
  const totalPlayed=plays.reduce((sum,r)=>sum+(r.cards?.length||0),0);
  const advice=[];
 
@@ -1010,81 +1025,57 @@ function showAnalysis(){
  }else{
   advice.push({
    title:"手札の減らし方",
-   body:`今回あなたは${plays.length}回カードを出し、合計${totalPlayed}枚を出しました。試合終了時に${me.hand.length}枚残っています。場が流れたときは、単独のカードだけでなく、同じ数字を複数枚まとめて出せないか確認してみましょう。`
+   body:`今回あなたは${plays.length}回カードを出し、合計${totalPlayed}枚を出しました。試合終了時に${me.hand.length}枚残っています。場が流れたときは、同じ数字を複数枚まとめて出せないか確認してみましょう。`
   });
  }
 
- if(passes.length>=4){
-  advice.push({
-   title:"パスの使い方",
-   body:`今回のパスは${passes.length}回です。パスは強いカードを温存するのに役立ちますが、場が流れた後に出せる組み合わせがないかも意識しましょう。`
-  });
- }else{
-  advice.push({
-   title:"パスの判断",
-   body:`今回のパスは${passes.length}回です。無理に強いカードを使わず温存する判断と、手札を減らすために出す判断を使い分けましょう。`
-  });
- }
+ advice.push({
+  title:"パスの判断",
+  body:`今回のパスは${passes.length}回です。強いカードを温存する判断と、手札を減らすために出す判断を使い分けましょう。`
+ });
 
- if(highCards===0){
-  advice.push({
-   title:"強いカードの温存と活用",
-   body:"A・2・ジョーカーなどの強いカードを出した記録はありませんでした。相手の手札が少ないときに上がりを止めるため、強いカードをいつ使うか考えてみましょう。"
-  });
- }else{
-  advice.push({
-   title:"強いカードの使いどころ",
-   body:`A・2・ジョーカーを含むプレイは${highCards}枚分ありました。強いカードを使って場を取ることに加え、相手が上がりそうなときに止め札として残す判断も有効です。`
-  });
- }
+ advice.push({
+  title:"強いカードの使いどころ",
+  body:highCards===0
+   ?"A・2・ジョーカーなどの強いカードを出した記録はありませんでした。相手が上がりそうなときに使うことも考えてみましょう。"
+   :`A・2・ジョーカーを含むプレイは${highCards}枚分ありました。場を取ることに加え、相手が上がりそうなときに止め札として残す判断も有効です。`
+ });
 
- if(multiPlays>0){
-  advice.push({
-   title:"複数枚出し",
-   body:`複数枚をまとめて出したプレイが${multiPlays}回ありました。同じ数字のカードを組み合わせると、手札を効率よく減らせます。`
-  });
- }else{
-  advice.push({
-   title:"複数枚出しを探す",
-   body:"複数枚をまとめて出した記録はありませんでした。同じ数字のカードが複数ある場合、場の枚数と合うタイミングでまとめて出す方法も試してみましょう。"
-  });
- }
+ advice.push({
+  title:"複数枚出し",
+  body:multiPlays>0
+   ?`複数枚をまとめて出したプレイが${multiPlays}回ありました。同じ数字のカードを組み合わせると、手札を効率よく減らせます。`
+   :"複数枚をまとめて出した記録はありませんでした。同じ数字のカードをまとめて出す方法も試してみましょう。"
+ });
 
  const specialUsed=Object.entries(specialCounts)
   .map(([v,count])=>`${specialNames[v]}：${count}枚`).join("、");
 
  advice.push({
   title:"特殊カードの使用状況",
-  body:specialUsed?
-   `記録された特殊カードは、${specialUsed}です。特殊効果は出せるときに使うだけでなく、相手の手札枚数や場の状況に合わせて使うタイミングを選びましょう。`:
-   "今回、特殊カードを使った記録はありませんでした。5スキップや8切りなどは、手札を減らしたいときや相手の手番を妨げたいときに使うと効果的です。"
+  body:specialUsed
+   ?`記録された特殊カードは、${specialUsed}です。相手の手札枚数や場の状況に合わせて使うタイミングを選びましょう。`
+   :"今回、特殊カードを使った記録はありませんでした。5スキップや8切りなどの効果も活用してみましょう。"
  });
 
  if(specialCounts[5]){
   advice.push({
    title:"5スキップの活用",
-   body:`5スキップを含むプレイがありました。残り2人のときは相手の手番を飛ばして自分の手番に戻るため、相手の上がりを防いだり、続けて手札を減らしたりする機会になります。`
+   body:"5スキップは相手の手番を飛ばす機会になります。相手の上がりを防いだり、続けて手札を減らしたりする場面で活用しましょう。"
   });
  }
 
  if(specialCounts[8]){
   advice.push({
    title:"8切りと4止め",
-   body:"8切りを使う場面では、相手が4を2枚、または4とジョーカーを持っている可能性も考慮しましょう。4止めが成功すると相手が続けて手番を取るため、場を流すタイミングも重要です。"
+   body:"8切りを使う場面では、相手が4を2枚、または4とジョーカーを持っている可能性も考慮しましょう。"
   });
  }
 
- if(me.place===1){
-  advice.push({
-   title:"次の試合への目標",
-   body:"勝利につながった動きを振り返りつつ、次は不要なカードを早めに減らすことと、強いカードを使うタイミングの両方を意識してみましょう。"
-  });
- }else{
-  advice.push({
-   title:"次の試合への目標",
-   body:"まずは場が流れたときに手札を減らすことを意識し、相手の残り枚数が少ないときは強いカードや特殊効果で上がりを防げるか考えてみましょう。"
-  });
- }
+ advice.push({
+  title:"次の試合への目標",
+  body:"場が流れたときに手札を減らすことを意識し、相手の残り枚数が少ないときは強いカードや特殊効果で上がりを防げるか考えてみましょう。"
+ });
 
  $("analysis").innerHTML=
   `<p><strong>結果：</strong>${me.place}位 ／ 手札残り ${me.hand.length}枚</p>`+
