@@ -1,0 +1,875 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>オフライン大富豪</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#102e25;color:white;font-family:system-ui,sans-serif}
+header{text-align:center;padding:12px;background:#092019}
+h1{margin:0;font-size:25px}
+main{max-width:1000px;margin:auto;padding:10px}
+.panel{background:#18483a;border:1px solid #34725c;border-radius:14px;padding:12px;margin:10px 0}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+button,select{font:inherit;border:0;border-radius:9px;padding:10px 14px;cursor:pointer}
+button{background:#f4d35e;color:#17231d;font-weight:bold}
+button:disabled{opacity:.4;cursor:not-allowed}
+button.secondary{background:#d8e2dc}
+.small{font-size:13px;color:#d5e7dd}
+#status{font-size:17px;font-weight:bold;min-height:28px}
+.players{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.player{background:#12382d;border:1px solid #39715c;border-radius:10px;padding:10px;text-align:center;min-width:0}
+.player.active{outline:3px solid #f4d35e}
+.player.finished{opacity:.6}
+#tableArea{text-align:center;min-height:150px}
+#field,#removed{display:flex;justify-content:center;flex-wrap:wrap;gap:7px;margin:12px 0;min-height:55px}
+.hand{display:flex;flex-wrap:wrap;justify-content:center;gap:7px;padding:12px 0}
+.card{background:#fff;color:#17231d;border:2px solid #d5d5d5;border-radius:9px;width:57px;height:81px;padding:4px;display:flex;flex-direction:column;justify-content:space-between;align-items:stretch;overflow:hidden;flex-shrink:0;font-weight:bold;box-shadow:0 2px 4px #0004}
+.card .corner{display:flex;flex-direction:column;align-items:flex-start;line-height:1;gap:2px}
+.card .rank{font-size:18px;line-height:1;white-space:nowrap}
+.card .suit{font-size:15px;line-height:1}
+.card .bottom{align-self:flex-end;transform:rotate(180deg);text-align:left;line-height:1}
+.card.red{color:#d62828}
+.card.joker{color:#7b2cbf}
+.card.selected{transform:translateY(-5px);border:3px solid #f4d35e;background:#fff3b0}
+.card.tiny{width:40px;height:57px;padding:3px;border-radius:6px}
+.card.tiny .rank{font-size:13px}
+.card.tiny .suit{font-size:11px}
+.card.pick{cursor:pointer}
+#message{white-space:pre-wrap;line-height:1.7}
+#modal,#arrivalNotice{position:fixed;inset:0;background:#000b;display:none;align-items:center;justify-content:center;padding:12px;z-index:10}
+#modal.open,#arrivalNotice.open{display:flex}
+.modalbox{background:#174637;border:1px solid #6caa8c;border-radius:15px;padding:18px;width:min(650px,100%);max-height:90vh;overflow:auto}
+.modalbox h2{margin-top:0}
+#choiceCards{display:flex;justify-content:center;flex-wrap:wrap;gap:8px}
+.choice{background:#fff;color:#222;border:3px solid transparent;border-radius:10px;min-width:70px;padding:10px;cursor:pointer}
+.choice.chosen{border-color:#f4d35e;background:#fff3b0}
+.log{max-height:180px;overflow:auto;font-size:13px;line-height:1.6}
+.hidden{display:none!important}
+#arrivalNotice{z-index:30}
+.noticeBox{background:#fff;color:#17382c;border:4px solid #f4d35e;border-radius:18px;padding:24px;width:min(360px,92vw);box-shadow:0 0 0 100vmax #0009;text-align:center}
+.noticeBox h2{margin:0 0 10px;font-size:24px}
+#arrivalCard{display:flex;justify-content:center;margin:20px}
+#arrivalCard .card{width:85px;height:120px;border-width:3px}
+#arrivalCard .rank{font-size:27px}
+#arrivalCard .suit{font-size:22px}
+footer{text-align:center;color:#c5d7ce;font-size:12px;padding:18px}
+@media(max-width:550px){h1{font-size:21px}.players{grid-template-columns:repeat(2,minmax(0,1fr))}.card{width:49px;height:72px}.card .rank{font-size:16px}main{padding:8px}}
+</style>
+</head>
+<body>
+<header>
+ <h1>♠ 大富豪 ♠</h1>
+ <div class="small">オフライン対戦・CPU 3人</div>
+</header>
+
+<main>
+ <section class="panel">
+  <div class="row">
+   <button id="newGame">新しい試合</button>
+   <label>CPUの強さ
+    <select id="difficulty">
+     <option value="easy">やさしい</option>
+     <option value="normal" selected>ふつう</option>
+     <option value="hard">強い</option>
+    </select>
+   </label>
+  </div>
+  <p class="small">オフラインで遊べます。</p>
+ </section>
+
+ <section class="panel">
+  <div id="status">準備中...</div>
+  <div class="players" id="players"></div>
+ </section>
+
+ <section class="panel" id="tableArea">
+  <h2>場</h2>
+  <div id="field"><span class="small">カードはありません</span></div>
+  <div id="fieldInfo" class="small"></div>
+  <p>Qボンバーなどで消えたカード</p>
+  <div id="removed"><span class="small">なし</span></div>
+ </section>
+
+ <section class="panel">
+  <h2>あなたの手札</h2>
+  <div id="hand" class="hand"></div>
+  <div class="row">
+   <button id="playBtn">選択したカードを出す</button>
+   <button id="passBtn" class="secondary">パス</button>
+   <button id="clearBtn" class="secondary">選択解除</button>
+  </div>
+  <p id="message" class="small">カードを選択してください。</p>
+ </section>
+
+ <section class="panel">
+  <h2>プレイ履歴</h2>
+  <div id="history" class="log">試合開始前です。</div>
+ </section>
+
+ <section class="panel hidden" id="analysisPanel">
+  <h2>試合終了後の分析</h2>
+  <div id="analysis"></div>
+  <p class="small">プレイ履歴から改善のヒントを出す簡易分析です。</p>
+ </section>
+</main>
+
+<div id="modal">
+ <div class="modalbox">
+  <h2 id="modalTitle">カードを選択</h2>
+  <p id="modalDescription"></p>
+  <div id="choiceCards"></div>
+  <div class="row" style="margin-top:16px;justify-content:center">
+   <button id="modalConfirm">決定</button>
+   <button id="modalCancel" class="secondary">キャンセル</button>
+  </div>
+ </div>
+</div>
+
+<div id="arrivalNotice">
+ <div class="noticeBox">
+  <h2 id="arrivalTitle">🎁 カードが届いた！</h2>
+  <p id="arrivalText"></p>
+  <div id="arrivalCard"></div>
+  <p><strong>手札にカードが追加されました。</strong></p>
+  <button id="arrivalClose">確認</button>
+ </div>
+</div>
+
+<footer>オフライン大富豪</footer>
+
+<script>
+"use strict";
+
+const SUITS=["♠","♥","♦","♣"];
+const RANKS=[
+ {value:3,label:"3"},{value:4,label:"4"},{value:5,label:"5"},
+ {value:6,label:"6"},{value:7,label:"7"},{value:8,label:"8"},
+ {value:9,label:"9"},{value:10,label:"10"},{value:11,label:"J"},
+ {value:12,label:"Q"},{value:13,label:"K"},{value:14,label:"A"},
+ {value:15,label:"2"}
+];
+const $=id=>document.getElementById(id);
+
+let game=null;
+let selected=new Set();
+let busy=false;
+let cpuTimer=null;
+let modalResolver=null;
+let modalSelected=null;
+
+function makeDeck(){
+ const deck=[];
+ let id=0;
+ for(const suit of SUITS){
+  for(const r of RANKS){
+   deck.push({id:id++,suit,value:r.value,label:r.label});
+  }
+ }
+ deck.push({id:id++,suit:"JOKER",value:16,label:"JOKER"});
+ return deck;
+}
+function shuffle(a){
+ for(let i=a.length-1;i>0;i--){
+  const j=Math.floor(Math.random()*(i+1));
+  [a[i],a[j]]=[a[j],a[i]];
+ }
+ return a;
+}
+function rankName(v){
+ if(v===16)return "ジョーカー";
+ return RANKS.find(r=>r.value===v)?.label??String(v);
+}
+function cardName(c){
+ return c.suit==="JOKER"?"ジョーカー":c.suit+c.label;
+}
+function escapeHTML(s){
+ return String(s).replace(/[&<>"']/g,c=>({
+  "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+ })[c]);
+}
+function cardHTML(c,extra=""){
+ const red=c.suit==="♥"||c.suit==="♦";
+ const joker=c.suit==="JOKER";
+ const suit=joker?"🃏":c.suit;
+ return `<div class="card ${red?"red":""} ${joker?"joker":""} ${extra}">
+  <div class="corner"><div class="rank">${c.label}</div><div class="suit">${suit}</div></div>
+  <div class="corner bottom"><div class="rank">${c.label}</div><div class="suit">${suit}</div></div>
+ </div>`;
+}
+function activePlayers(){
+ return game.players.filter(p=>!p.finished);
+}
+function log(s){
+ game.logs.push(s);
+ if(game.logs.length>200)game.logs.shift();
+ $("history").innerHTML=game.logs.map(x=>`<div>• ${escapeHTML(x)}</div>`).join("");
+ $("history").scrollTop=$("history").scrollHeight;
+}
+function strength(c){
+ let v=c.value;
+ if(game.revolution)v=18-v;
+ if(game.jBack)v=18-v;
+ return v;
+}
+function nextActive(from,steps=1){
+ let i=from,moved=0;
+ while(moved<steps){
+  i=(i+1)%game.players.length;
+  if(!game.players[i].finished)moved++;
+ }
+ return i;
+}
+
+function newGame(){
+ if(cpuTimer)clearTimeout(cpuTimer);
+ cpuTimer=null;
+ closeModal(null);
+ $("arrivalNotice").classList.remove("open");
+ busy=false;
+ selected.clear();
+
+ const deck=shuffle(makeDeck());
+ const players=[
+  {name:"あなた",hand:[],finished:false,place:null,isHuman:true},
+  {name:"CPU 1",hand:[],finished:false,place:null,isHuman:false},
+  {name:"CPU 2",hand:[],finished:false,place:null,isHuman:false},
+  {name:"CPU 3",hand:[],finished:false,place:null,isHuman:false}
+ ];
+ deck.forEach((c,i)=>players[i%4].hand.push(c));
+ players.forEach(p=>p.hand.sort((a,b)=>a.value-b.value||a.suit.localeCompare(b.suit)));
+
+ game={
+  players,
+  turn:players.findIndex(p=>p.hand.some(c=>c.suit==="♦"&&c.value===3)),
+  firstMove:true,
+  field:[],
+  fieldOwner:null,
+  passes:0,
+  revolution:false,
+  jBack:false,
+  shibariSuit:null,
+  nineLock:false,
+  removedCards:[],
+  logs:[],
+  nextPlace:1,
+  over:false,
+  records:[]
+ };
+
+ $("analysisPanel").classList.add("hidden");
+ $("analysis").innerHTML="";
+ $("message").textContent="♦3を持つプレイヤーから開始します。";
+ log("試合開始。♦3を持つプレイヤーからスタート。");
+ render();
+ scheduleCPU();
+}
+
+function validPlay(cards,index){
+ const p=game.players[index];
+ if(!cards.length)return {ok:false,reason:"カードを選択してください。"};
+ if(cards.some(c=>!p.hand.some(h=>h.id===c.id)))
+  return {ok:false,reason:"手札にあるカードを選んでください。"};
+
+ if(game.firstMove){
+  if(cards.length===1&&cards[0].suit==="♦"&&cards[0].value===3)return {ok:true};
+  return {ok:false,reason:"最初は♦3を1枚だけ出してください。"};
+ }
+
+ const fieldSingleJoker=game.field.length===1&&game.field[0].suit==="JOKER";
+
+ if(!game.nineLock&&fieldSingleJoker&&cards.length===1&&cards[0].suit==="♠"&&cards[0].value===3)
+  return {ok:true,spadeThreeReturn:true};
+
+ if(game.field.length===1&&cards.length===1){
+  const fc=game.field[0],c=cards[0];
+  if(fc.suit!=="JOKER"&&c.suit===fc.suit&&c.value===fc.value-1)
+   return {ok:true,downNumber:true};
+ }
+
+ const hasJoker=cards.some(c=>c.suit==="JOKER");
+ if(hasJoker){
+  if(cards.length!==1)return {ok:false,reason:"ジョーカーは1枚で出してください。"};
+  if(game.field.length>1)return {ok:false,reason:"場の枚数と同じ枚数を出してください。"};
+  if(fieldSingleJoker)return {ok:false,reason:"ジョーカーには♠3で返せます。"};
+  return {ok:true};
+ }
+
+ if(game.shibariSuit&&cards.some(c=>c.suit!==game.shibariSuit))
+  return {ok:false,reason:`${game.shibariSuit}縛り中です。`};
+
+ if(new Set(cards.map(c=>c.value)).size!==1)
+  return {ok:false,reason:"複数枚出す場合は同じ数字でそろえてください。"};
+
+ if(game.field.length){
+  if(cards.length!==game.field.length)
+   return {ok:false,reason:`場には${game.field.length}枚出ています。同じ枚数を出してください。`};
+  if(strength(cards[0])<=strength(game.field[0]))
+   return {ok:false,reason:"場のカードより強いカードを出してください。"};
+ }
+ return {ok:true};
+}
+
+function render(){
+ if(!game)return;
+ const p=game.players[game.turn];
+ $("status").textContent=game.over?"試合終了":
+  `手番：${p.name}${p.isHuman?"（あなた）":""}${busy?" — 処理中...":""}`;
+
+ $("players").innerHTML=game.players.map((pl,i)=>`
+  <div class="player ${i===game.turn&&!game.over?"active":""} ${pl.finished?"finished":""}">
+   <strong>${escapeHTML(pl.name)}</strong><br>
+   <span class="small">${pl.finished?pl.place+"位で上がり":"残り "+pl.hand.length+" 枚"}</span>
+  </div>`).join("");
+
+ $("field").innerHTML=game.field.length?
+  game.field.map(c=>cardHTML(c,"tiny")).join(""):
+  '<span class="small">場は流れています</span>';
+
+ const tags=[];
+ if(game.revolution)tags.push("革命中");
+ if(game.jBack)tags.push("Jバック中");
+ if(game.shibariSuit)tags.push(game.shibariSuit+"縛り中");
+ if(game.nineLock)tags.push("9の効果：特殊効果無効");
+ if(game.field.length)tags.push("場の枚数："+game.field.length);
+ $("fieldInfo").textContent=tags.join(" / ")||"通常状態";
+
+ $("removed").innerHTML=game.removedCards.length?
+  game.removedCards.map(c=>cardHTML(c,"tiny")).join(""):
+  '<span class="small">なし</span>';
+
+ $("hand").innerHTML=game.players[0].hand.map(c=>{
+  const red=c.suit==="♥"||c.suit==="♦";
+  const joker=c.suit==="JOKER";
+  const suit=joker?"🃏":c.suit;
+  return `<div class="card pick ${red?"red":""} ${joker?"joker":""} ${selected.has(c.id)?"selected":""}"
+   data-id="${c.id}" role="button" tabindex="0" aria-label="${cardName(c)}">
+   <div class="corner"><div class="rank">${c.label}</div><div class="suit">${suit}</div></div>
+   <div class="corner bottom"><div class="rank">${c.label}</div><div class="suit">${suit}</div></div>
+  </div>`;
+ }).join("");
+
+ $("hand").querySelectorAll("[data-id]").forEach(el=>{
+  const toggle=()=>{
+   if(game.over||busy||game.turn!==0)return;
+   const id=Number(el.dataset.id);
+   selected.has(id)?selected.delete(id):selected.add(id);
+   render();
+  };
+  el.addEventListener("click",toggle);
+  el.addEventListener("keydown",e=>{
+   if(e.key==="Enter"||e.key===" "){e.preventDefault();toggle();}
+  });
+ });
+
+ const humanTurn=!game.over&&game.turn===0&&!busy;
+ $("playBtn").disabled=!humanTurn;
+ $("passBtn").disabled=!humanTurn||game.firstMove;
+ $("clearBtn").disabled=!humanTurn;
+}
+function setMessage(s){
+ $("message").textContent=s;
+}
+function finishPlayer(i){
+ const p=game.players[i];
+ if(p.finished||p.hand.length!==0)return;
+ p.finished=true;
+ p.place=game.nextPlace++;
+ log(`${p.name}が${p.place}位で上がり！`);
+ if(i===0)setMessage(`あなたは${p.place}位で上がりました！`);
+}
+function checkGameOver(){
+ const remaining=activePlayers();
+ if(remaining.length>1)return false;
+ if(remaining.length===1){
+  const p=remaining[0];
+  p.finished=true;
+  p.place=game.nextPlace++;
+  log(`${p.name}が${p.place}位。試合終了。`);
+ }
+ game.over=true;
+ if(cpuTimer)clearTimeout(cpuTimer);
+ cpuTimer=null;
+ busy=false;
+ selected.clear();
+ render();
+ showAnalysis();
+ return true;
+}
+function clearField(reason){
+ game.field=[];
+ game.fieldOwner=null;
+ game.passes=0;
+ game.shibariSuit=null;
+ game.jBack=false;
+ game.nineLock=false;
+ game.firstMove=false;
+ log(reason+" 場が流れ、縛り・Jバック・9の無効化が解除されました。");
+}
+
+function applyPlay(index,cards,validation){
+ const p=game.players[index];
+ const previousField=[...game.field];
+ const wasFirst=game.firstMove;
+
+ if(previousField.length===1&&cards.length===1&&
+  previousField[0].suit!=="JOKER"&&cards[0].suit!=="JOKER"&&
+  previousField[0].suit===cards[0].suit){
+  game.shibariSuit=cards[0].suit;
+ }
+
+ p.hand=p.hand.filter(h=>!cards.some(c=>c.id===h.id));
+ game.field=[...cards];
+ game.fieldOwner=index;
+ game.passes=0;
+ game.firstMove=false;
+
+ const nineActive=cards.some(c=>c.value===9);
+ if(nineActive){
+  game.nineLock=true;
+  log("9の効果！場が流れるまで特殊効果が無効になります。");
+ }
+
+ if(!game.nineLock){
+  if(cards.length>=4){
+   game.revolution=!game.revolution;
+   log(game.revolution?"革命発生！強さが逆転！":"革命終了。通常の強さに戻りました。");
+  }
+  if(cards.some(c=>c.value===11)){
+   game.jBack=!game.jBack;
+   log(game.jBack?"Jバック発生！強さが一時的に逆転！":"Jバックが解除されました。");
+  }
+ }else if(!nineActive){
+  log("9の無効化中のため、特殊効果は発動しません。");
+ }
+
+ let extra="";
+ if(validation.downNumber)extra="（ダウンナンバー）";
+ if(validation.spadeThreeReturn)extra="（♠3返し）";
+ log(`${p.name}：${cards.map(cardName).join("、")}を出した${extra}。`);
+
+ game.records.push({
+  player:index,name:p.name,move:"play",
+  cards:cards.map(c=>({...c})),
+  handBefore:p.hand.length+cards.length,
+  handAfter:p.hand.length,
+  fieldBefore:previousField.map(c=>({...c}))
+ });
+ if(wasFirst)log("♦3からゲーム開始。");
+}
+
+async function chooseModal(title,description,items,mode){
+ $("modalTitle").textContent=title;
+ $("modalDescription").textContent=description;
+ $("choiceCards").innerHTML="";
+ modalSelected=null;
+
+ items.forEach(item=>{
+  const b=document.createElement("button");
+  b.className="choice";
+  b.textContent=mode==="rank"?
+   (item.value===16?"🃏 ジョーカー":rankName(item.value)):cardName(item);
+  b.addEventListener("click",()=>{
+   modalSelected=item;
+   $("choiceCards").querySelectorAll(".choice").forEach(x=>x.classList.remove("chosen"));
+   b.classList.add("chosen");
+  });
+  $("choiceCards").appendChild(b);
+ });
+ $("modal").classList.add("open");
+ return new Promise(resolve=>{modalResolver=resolve;});
+}
+function closeModal(value){
+ $("modal").classList.remove("open");
+ if(modalResolver){
+  const r=modalResolver;
+  modalResolver=null;
+  r(value);
+ }
+}
+$("modalConfirm").addEventListener("click",()=>{
+ if(modalSelected===null){
+  $("modalDescription").textContent="1つ選択してください。";
+  return;
+ }
+ closeModal(modalSelected);
+});
+$("modalCancel").addEventListener("click",()=>closeModal(null));
+
+function showIncomingCard(giver,card){
+ $("arrivalTitle").textContent="🎁 7渡しでカードが届いた！";
+ $("arrivalText").textContent=`${giver}からこのカードを受け取りました。`;
+ $("arrivalCard").innerHTML=cardHTML(card);
+ $("arrivalNotice").classList.add("open");
+}
+$("arrivalClose").addEventListener("click",()=>{
+ $("arrivalNotice").classList.remove("open");
+});
+
+async function applySevenGive(index){
+ const giver=game.players[index];
+ if(giver.hand.length===0)return;
+
+ const targetIndex=nextActive(index);
+ const target=game.players[targetIndex];
+ if(!target||target.finished)return;
+
+ let chosen;
+ if(giver.isHuman){
+  chosen=await chooseModal(
+   "7渡し",
+   `${target.name}に渡すカードを1枚選んでください。`,
+   [...giver.hand],
+   "card"
+  );
+  if(!chosen)return;
+ }else{
+  chosen=[...giver.hand].sort((a,b)=>b.value-a.value)[0];
+ }
+
+ const card=giver.hand.find(c=>c.id===chosen.id);
+ if(!card)return;
+
+ giver.hand=giver.hand.filter(c=>c.id!==card.id);
+ target.hand.push(card);
+ target.hand.sort((a,b)=>a.value-b.value||a.suit.localeCompare(b.suit));
+
+ log(`${giver.name}が${target.name}に${cardName(card)}を渡した。`);
+
+ if(target.isHuman)showIncomingCard(giver.name,card);
+
+ finishPlayer(index);
+ finishPlayer(targetIndex);
+ render();
+}
+
+async function applyTenDiscard(index){
+ const p=game.players[index];
+ if(!p.hand.length)return;
+ let chosen;
+
+ if(p.isHuman){
+  chosen=await chooseModal(
+   "10捨て","捨てるカードを手札から1枚選択してください。",
+   [...p.hand],"card"
+  );
+ }else{
+  chosen=[...p.hand].sort((a,b)=>b.value-a.value)[0];
+ }
+ if(!chosen)return;
+
+ const card=p.hand.find(c=>c.id===chosen.id);
+ if(!card)return;
+ p.hand=p.hand.filter(c=>c.id!==card.id);
+ game.removedCards.push(card);
+ log(`${p.name}が10捨てで${cardName(card)}を捨てた。`);
+ finishPlayer(index);
+}
+
+/*
+ Qボンバー：
+ 出したQの枚数だけ、消す数字を選ぶ。
+ 同じ数字は重複選択できない。
+ 選んだ数字のカードを全員の手札から取り除く。
+*/
+async function applyQBomber(index,qCount){
+ const p=game.players[index];
+ const availableRanks=RANKS.map(r=>({value:r.value})).concat([{value:16}]);
+ const chosenRanks=[];
+
+ if(p.isHuman){
+  for(let n=0;n<qCount;n++){
+   const remaining=availableRanks.filter(
+    r=>!chosenRanks.some(c=>c.value===r.value)
+   );
+
+   const chosen=await chooseModal(
+    `Qボンバー (${n+1}/${qCount})`,
+    `消したい数字を選択してください。あと${qCount-n}回選べます。`,
+    remaining,
+    "rank"
+   );
+
+   if(!chosen){
+    log("Qボンバーの選択がキャンセルされました。");
+    break;
+   }
+   chosenRanks.push(chosen);
+  }
+ }else{
+  // CPUは手札全体から、よく残っている数字を優先して選ぶ。
+  // 同じ数字を二度選ばない。
+  const counts={};
+  game.players.forEach(pl=>{
+   pl.hand.forEach(c=>{
+    counts[c.value]=(counts[c.value]||0)+1;
+   });
+  });
+
+  const ranked=availableRanks
+   .filter(r=>availableRanks.some(x=>x.value===r.value))
+   .sort((a,b)=>(counts[b.value]||0)-(counts[a.value]||0));
+
+  for(const r of ranked){
+   if(chosenRanks.length>=qCount)break;
+   chosenRanks.push(r);
+  }
+ }
+
+ if(chosenRanks.length===0)return;
+
+ const removed=[];
+ for(const chosen of chosenRanks){
+  const value=chosen.value;
+  for(const pl of game.players){
+   const hit=pl.hand.filter(c=>c.value===value);
+   removed.push(...hit);
+   pl.hand=pl.hand.filter(c=>c.value!==value);
+  }
+  log(`Qボンバー：${rankName(value)}を選択。`);
+ }
+
+ game.removedCards.push(...removed);
+ log(`Qボンバー終了。${chosenRanks.length}種類を選び、${removed.length}枚のカードが消えた。`);
+
+ for(let i=0;i<game.players.length;i++)finishPlayer(i);
+}
+
+async function playCards(index,cards){
+ const validation=validPlay(cards,index);
+ if(!validation.ok){
+  if(game.players[index].isHuman)setMessage(validation.reason);
+  return false;
+ }
+
+ applyPlay(index,cards,validation);
+
+ // 9が出たとき、または既に9の効果中なら特殊効果を発動しない
+ const effectBlocked=game.nineLock;
+
+ if(!effectBlocked){
+  const sevenCount=cards.filter(c=>c.value===7).length;
+  const tenCount=cards.filter(c=>c.value===10).length;
+  const qCount=cards.filter(c=>c.value===12).length;
+
+  // 7を複数枚出しても、7渡しはこの実装では1回
+  if(sevenCount>0)await applySevenGive(index);
+
+  // 10捨て：出した10の枚数分、1枚ずつ捨てる
+  for(let n=0;n<tenCount;n++){
+   if(game.players[index].hand.length===0)break;
+   await applyTenDiscard(index);
+  }
+
+  // Qボンバー：出したQの枚数分、数字を選ぶ
+  if(qCount>0)await applyQBomber(index,qCount);
+ }
+
+ if(checkGameOver())return true;
+ finishPlayer(index);
+ if(checkGameOver())return true;
+
+ if(!effectBlocked&&cards.some(c=>c.value===8)){
+  clearField("8切り！");
+  game.turn=nextActive(index);
+ }else if(!effectBlocked&&validation.spadeThreeReturn){
+  clearField("♠3返し！");
+  game.turn=nextActive(index);
+ }else{
+  game.turn=nextActive(index,!effectBlocked&&cards.some(c=>c.value===5)?2:1);
+ }
+
+ render();
+ scheduleCPU();
+ return true;
+}
+
+/*
+ CPUの判定は即時に行う。
+ 有効な手が見つからない場合は、5秒待たずにパスする。
+ 有効なカードを出すときだけ5秒待つ。
+*/
+function findCPUMove(index){
+ const p=game.players[index];
+ const hand=[...p.hand].sort((a,b)=>strength(a)-strength(b));
+
+ if(game.firstMove){
+  const c=hand.find(c=>c.suit==="♦"&&c.value===3);
+  return c?{cards:[c]}:null;
+ }
+
+ if(!game.nineLock&&game.field.length===1&&game.field[0].suit==="JOKER"){
+  const c=hand.find(c=>c.suit==="♠"&&c.value===3);
+  return c?{cards:[c]}:null;
+ }
+
+ if(game.field.length===1&&game.field[0].suit!=="JOKER"){
+  const fc=game.field[0];
+  const down=hand.find(c=>c.suit===fc.suit&&c.value===fc.value-1);
+  if(down&&validPlay([down],index).ok)return {cards:[down]};
+ }
+
+ const groups={};
+ hand.forEach(c=>{
+  if(!groups[c.value])groups[c.value]=[];
+  groups[c.value].push(c);
+ });
+
+ const values=Object.keys(groups).map(Number)
+  .sort((a,b)=>strength(groups[a][0])-strength(groups[b][0]));
+ const need=game.field.length;
+
+ if(need){
+  for(const v of values){
+   if(groups[v].length>=need){
+    const cards=groups[v].slice(0,need);
+    if(validPlay(cards,index).ok)return {cards};
+   }
+  }
+ }else{
+  for(const v of values){
+   const cards=groups[v].slice(0,Math.min(groups[v].length,4));
+   if(validPlay(cards,index).ok)return {cards};
+  }
+ }
+
+ const joker=hand.find(c=>c.suit==="JOKER");
+ if(joker&&validPlay([joker],index).ok)return {cards:[joker]};
+ return null;
+}
+
+function scheduleCPU(){
+ if(!game||game.over||busy||game.turn===0)return;
+
+ const index=game.turn;
+ const p=game.players[index];
+
+ if(p.finished){
+  game.turn=nextActive(index);
+  scheduleCPU();
+  return;
+ }
+
+ // ここで即座に判定。判定のためにタイマーを使わない。
+ const move=findCPUMove(index);
+
+ // 出せないなら即パス
+ if(!move){
+  doPass(index,true);
+  return;
+ }
+
+ // 出せるカードがある場合のみ5秒待つ
+ busy=true;
+ render();
+
+ cpuTimer=setTimeout(async()=>{
+  cpuTimer=null;
+  if(!game||game.over)return;
+
+  await playCards(index,move.cards);
+
+  busy=false;
+  render();
+  scheduleCPU();
+ },5000);
+}
+
+function doPass(index,automatic=false){
+ if(game.over||game.firstMove)return;
+
+ const p=game.players[index];
+ game.passes++;
+ log(`${p.name}がパス。`);
+
+ game.records.push({
+  player:index,name:p.name,move:"pass",
+  handBefore:p.hand.length,handAfter:p.hand.length,
+  fieldBefore:game.field.map(c=>({...c}))
+ });
+
+ const active=activePlayers();
+ const owner=game.fieldOwner;
+ const ownerActive=owner!==null&&!game.players[owner].finished;
+ const others=active.filter(pl=>game.players.indexOf(pl)!==owner);
+
+ if(ownerActive&&game.passes>=others.length){
+  clearField("全員がパス。");
+  game.turn=owner;
+ }else{
+  game.turn=nextActive(index);
+ }
+
+ if(index===0&&!automatic)setMessage("パスしました。");
+ render();
+ scheduleCPU();
+}
+
+$("playBtn").addEventListener("click",async()=>{
+ if(game.over||busy||game.turn!==0)return;
+
+ const cards=game.players[0].hand.filter(c=>selected.has(c.id));
+ const v=validPlay(cards,0);
+ if(!v.ok){setMessage(v.reason);return;}
+
+ busy=true;
+ render();
+ await playCards(0,cards);
+ selected.clear();
+ busy=false;
+ render();
+ scheduleCPU();
+ setMessage("カードを出しました。");
+});
+
+$("passBtn").addEventListener("click",()=>{
+ if(game.over||busy||game.turn!==0)return;
+ selected.clear();
+ doPass(0,false);
+});
+$("clearBtn").addEventListener("click",()=>{
+ selected.clear();
+ render();
+});
+$("newGame").addEventListener("click",newGame);
+
+function showAnalysis(){
+ $("analysisPanel").classList.remove("hidden");
+ const me=game.players[0];
+ const mine=game.records.filter(r=>r.player===0);
+ const plays=mine.filter(r=>r.move==="play");
+ const passes=mine.filter(r=>r.move==="pass");
+ const strong=plays.filter(r=>r.cards.some(c=>c.value>=14||c.suit==="JOKER"));
+ const special=plays.filter(r=>r.cards.some(c=>[5,7,8,9,10,11,12].includes(c.value)));
+ const findings=[];
+
+ if(me.place===1){
+  findings.push(["勝利！","今回は1位です。手札を減らせたプレイや特殊効果の使い方を次の試合にも活かしましょう。"]);
+ }else{
+  findings.push(["終了時の手札",`試合終了時に${me.hand.length}枚残りました。場が流れたタイミングで出せるカードを探し、手札を減らすことを意識しましょう。`]);
+  if(passes.length)findings.push(["パスのタイミング",`${passes.length}回パスしました。場が流れた後に出せるカードがなかったか振り返りましょう。`]);
+  findings.push(["強いカードの使い方",strong.length?
+   `強いカードを含むプレイが${strong.length}回あります。相手の上がりを止める場面と、自分の手札を減らす場面を意識しましょう。`:
+   "強いカードを使うタイミングを考えてみましょう。"]);
+  findings.push(["特殊効果",special.length?
+   `特殊効果を含むプレイが${special.length}回あります。9の無効化も含め、効果を使った結果を振り返りましょう。`:
+   "特殊効果を状況に合わせて活用できるか考えてみましょう。"]);
+ }
+
+ $("analysis").innerHTML=
+  `<p><strong>結果：</strong>${me.place}位 ／ 手札残り ${me.hand.length}枚</p>`+
+  findings.map(f=>`<div class="panel"><strong>${escapeHTML(f[0])}</strong><p>${escapeHTML(f[1])}</p></div>`).join("")+
+  `<h3>次の試合で試すこと</h3><ol>
+   <li>場が流れたら、弱いカードや複数枚出しで手札を減らせないか考える。</li>
+   <li>相手の手札が少ないときは、強いカードで上がりを防ぐことを検討する。</li>
+   <li>Qボンバーは出したQの枚数分だけ数字を選べる。</li>
+   <li>9が場に出ている間は、特殊効果が無効になる。</li>
+  </ol>`;
+}
+
+newGame();
+</script>
+</body>
+</html>
