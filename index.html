@@ -6,140 +6,17 @@
 <title>大富豪 ローカル対戦</title>
 <style>
 :root{--felt:#064b37;--felt2:#033726;--gold:#ffd85a;--panel:#082f3c;--line:#3a8790}
-*{box-sizing:border-box}
-body{margin:0;background:radial-gradient(ellipse at center,#08704c,var(--felt2));color:#fff;font-family:system-ui,-apple-system,"Yu Gothic",sans-serif;min-height:100vh}
-header{padding:12px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
-h1{margin:0;font-size:clamp(23px,3vw,34px)}
-button{cursor:pointer;border:1px solid #8ecbd1;border-radius:10px;padding:10px 14px;background:linear-gradient(#126b91,#074466);color:white;font-weight:700;font-size:15px}
-button:disabled{opacity:.45;cursor:not-allowed}
-.layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(270px,370px);gap:12px;padding:0 12px 16px}
-.board{min-width:0}
-.statusbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px}
-.panel{background:#062d3be8;border:1px solid #4e9ba2;border-radius:13px;padding:12px;box-shadow:0 5px 14px #001c1a55}
-.statusbar .panel{flex:1;min-width:170px}
-.label{font-size:13px;color:#bce8e7}
-.value{font-size:18px;font-weight:800;margin-top:4px}
-.players{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
-.player{min-height:80px;text-align:center;border:1px solid #3b8c79;background:#073e32;border-radius:12px;padding:10px}
-.player.active{outline:3px solid var(--gold);background:#15553f}
-.cards-back{letter-spacing:-5px;color:#9ac6ff;font-size:23px}
-.center{display:flex;justify-content:center;align-items:center;gap:26px;min-height:190px;margin:10px 0}
-.pile{width:105px;text-align:center}
-.playing{min-height:122px;display:flex;justify-content:center;align-items:center;gap:4px;flex-wrap:wrap}
-.card{width:57px;height:82px;border-radius:8px;background:#fff;color:#151515;border:1px solid #d5d5d5;box-shadow:0 3px 7px #001b1880;display:flex;flex-direction:column;justify-content:space-between;padding:5px;font-weight:800;user-select:none;position:relative;flex-shrink:0}
-.card.red{color:#d51f2a}
-.card .big{font-size:26px;align-self:center}
-.card .corner{font-size:14px;line-height:1}
-.card .bottom{transform:rotate(180deg);align-self:flex-start}
-.back{background:repeating-linear-gradient(45deg,#124d8c,#124d8c 4px,#d4e8ff 5px,#124d8c 7px);border:3px solid #fff}
-.hand-area{border:1px solid #478f81;border-radius:14px;background:#07382e;padding:12px;margin-top:8px}
-.hand{display:flex;align-items:flex-end;justify-content:center;flex-wrap:wrap;gap:3px;min-height:100px}
-.hand .card{cursor:pointer;transition:transform .12s;margin-top:8px}
-.hand .card:hover{transform:translateY(-6px)}
-.hand .card.selected{transform:translateY(-16px);outline:3px solid var(--gold)}
-.actions{display:flex;justify-content:center;gap:10px;margin-top:12px;flex-wrap:wrap}
-.actions button{min-width:120px}
-.notice{min-height:27px;text-align:center;color:#ffe88a;font-weight:700;padding:5px}
-.effect-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
-.effect{border-radius:20px;padding:6px 10px;background:#147a4b;border:1px solid #70d7a0;font-weight:800;font-size:13px}
-.effect.none{background:#244753;border-color:#56808a;color:#d2e5e8}
-.rules h2{margin:0 0 8px}
-.rules table{width:100%;border-collapse:collapse;font-size:13px}
-.rules th,.rules td{border:1px solid #6b9aa1;padding:7px 6px;text-align:left;vertical-align:top}
-.rules th{background:#164958}
-.rules td:first-child{white-space:nowrap;font-weight:800;color:#ffdf71}
-.rules .small{font-size:12px;color:#d7eeee;margin-top:10px}
-.rulebutton{width:100%;margin-top:8px;background:#0b4350}
-.log{max-height:130px;overflow:auto;font-size:12px;line-height:1.6;color:#d4eeea}
-.log div{border-bottom:1px solid #245d5a;padding:3px 0}
-.subtle{font-size:12px;color:#b8d9d8}
-.top-actions{display:flex;gap:8px;flex-wrap:wrap}
-
-/* 場のカード一覧 */
-#tableCards{
- cursor:pointer;
- border:1px dashed #75c7a6;
- border-radius:12px;
- padding:8px;
- transition:background .15s;
-}
-#tableCards:hover{background:#ffffff12}
-#tableCards:focus-visible{outline:3px solid var(--gold)}
-.inspect-hint{color:#ffe88a;font-size:12px;text-align:center;margin-top:4px}
-
-.field-modal{
- position:fixed;inset:0;z-index:2000;display:none;
- align-items:center;justify-content:center;padding:14px;
- background:#001a16dd;
-}
-.field-modal.open{display:flex}
-.field-box{
- width:min(700px,100%);max-height:85vh;overflow:auto;
- background:#07382e;border:2px solid var(--gold);
- border-radius:16px;padding:18px;box-shadow:0 12px 40px #0009;
-}
-.field-box h2{margin:0 0 8px;font-size:22px}
-.field-summary{color:#c7e9e2;font-size:14px;margin-bottom:14px}
-.field-card-list{display:flex;flex-direction:column;gap:14px;padding:10px 0}
-.history-play{
- border:1px solid #478f81;border-radius:12px;padding:10px;
- background:#062d3b;
-}
-.history-player{font-weight:800;color:#ffe88a;margin-bottom:8px}
-.history-cards{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
-.history-cards .card{width:58px;height:84px;cursor:default}
-.field-empty{color:#c7e9e2;text-align:center;padding:25px 10px}
-.field-close{display:block;width:100%;margin-top:12px}
-
-.q-modal{position:fixed;inset:0;background:#001a16dd;display:none;align-items:center;justify-content:center;padding:14px;z-index:1000}
-.q-modal.open{display:flex}
-.q-box{width:min(760px,100%);max-height:92vh;overflow:auto;background:#07382e;border:2px solid #ffd85a;border-radius:16px;padding:18px;box-shadow:0 12px 40px #0009}
-.q-options{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:14px 0}
-.q-options button{min-height:46px}
-.q-options button.chosen{outline:3px solid #ffd85a;background:linear-gradient(#a65e12,#77400a)}
-.q-hand{display:none;border:1px solid #478f81;border-radius:10px;padding:10px;margin-top:12px}
-.q-hand.open{display:block}
-.q-hand-cards{display:flex;flex-wrap:wrap;justify-content:center;gap:4px}
-.q-hand-cards .card{width:43px;height:64px;font-size:12px}
-.q-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
-.q-help{color:#d7eeee;font-size:13px}
-
-@media(max-width:900px){
- .layout{grid-template-columns:1fr}
- .rules{order:2}
- .players{grid-template-columns:repeat(3,minmax(0,1fr))}
- .rules table{font-size:12px}
-}
-@media(max-width:500px){
- header{padding:10px}
- .layout{padding:0 8px 12px}
- .players{gap:5px}
- .player{padding:7px 3px;font-size:12px}
- .card{width:44px;height:68px;padding:4px}
- .card .big{font-size:21px}
- .hand{gap:2px}
- .center{gap:5px}
- .pile{width:75px}
- .playing{gap:3px}
- .field-box{padding:12px}
- .field-box h2{font-size:19px}
- .history-cards{gap:5px}
- .history-cards .card{width:45px;height:67px;padding:4px}
- .history-cards .card .big{font-size:20px}
- .history-cards .card .corner{font-size:12px}
- .q-box{padding:12px}
-}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at center,#08704c,var(--felt2));color:#fff;font-family:system-ui,-apple-system,"Yu Gothic",sans-serif;min-height:100vh}
+header{padding:12px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}h1{margin:0;font-size:clamp(23px,3vw,34px)}button{cursor:pointer;border:1px solid #8ecbd1;border-radius:10px;padding:10px 14px;background:linear-gradient(#126b91,#074466);color:white;font-weight:700;font-size:15px}button:disabled{opacity:.45;cursor:not-allowed}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(270px,370px);gap:12px;padding:0 12px 16px}.board{min-width:0}.statusbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px}.panel{background:#062d3be8;border:1px solid #4e9ba2;border-radius:13px;padding:12px;box-shadow:0 5px 14px #001c1a55}.statusbar .panel{flex:1;min-width:170px}.label{font-size:13px;color:#bce8e7}.value{font-size:18px;font-weight:800;margin-top:4px}.players{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}.player{min-height:94px;text-align:center;border:1px solid #3b8c79;background:#073e32;border-radius:12px;padding:10px}.player.active{outline:3px solid var(--gold);background:#15553f}.cards-back{letter-spacing:-5px;color:#9ac6ff;font-size:23px}.center{display:flex;justify-content:center;align-items:center;gap:26px;min-height:190px;margin:10px 0}.pile{width:105px;text-align:center}.playing{min-height:122px;display:flex;justify-content:center;align-items:center;gap:4px;flex-wrap:wrap}.card{width:57px;height:82px;border-radius:8px;background:#fff;color:#151515;border:1px solid #d5d5d5;box-shadow:0 3px 7px #001b1880;display:flex;flex-direction:column;justify-content:space-between;padding:5px;font-weight:800;user-select:none;position:relative}.card.red{color:#d51f2a}.card .big{font-size:26px;align-self:center}.card .corner{font-size:14px;line-height:1}.card .bottom{transform:rotate(180deg);align-self:flex-start}.back{background:repeating-linear-gradient(45deg,#124d8c,#124d8c 4px,#d4e8ff 5px,#124d8c 7px);border:3px solid #fff}.hand-area{border:1px solid #478f81;border-radius:14px;background:#07382e;padding:12px;margin-top:8px}.hand{display:flex;align-items:flex-end;justify-content:center;flex-wrap:wrap;gap:3px;min-height:100px}.hand .card{cursor:pointer;transition:transform .12s;margin-top:8px}.hand .card:hover{transform:translateY(-6px)}.hand .card.selected{transform:translateY(-16px);outline:3px solid var(--gold)}.actions{display:flex;justify-content:center;gap:10px;margin-top:12px;flex-wrap:wrap}.actions button{min-width:120px}.notice{min-height:27px;text-align:center;color:#ffe88a;font-weight:700;padding:5px}.effect-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.effect{border-radius:20px;padding:6px 10px;background:#147a4b;border:1px solid #70d7a0;font-weight:800;font-size:13px}.effect.none{background:#244753;border-color:#56808a;color:#d2e5e8}.rules h2{margin:0 0 8px}.rules table{width:100%;border-collapse:collapse;font-size:13px}.rules th,.rules td{border:1px solid #6b9aa1;padding:7px 6px;text-align:left;vertical-align:top}.rules th{background:#164958}.rules td:first-child{white-space:nowrap;font-weight:800;color:#ffdf71}.rules .small{font-size:12px;color:#d7eeee;margin-top:10px}.rulebutton{width:100%;margin-top:8px;background:#0b4350}.log{max-height:130px;overflow:auto;font-size:12px;line-height:1.6;color:#d4eeea}.log div{border-bottom:1px solid #245d5a;padding:3px 0}.subtle{font-size:12px;color:#b8d9d8}.top-actions{display:flex;gap:8px;flex-wrap:wrap}
+.field-modal{position:fixed;inset:0;background:#001a16dd;display:none;align-items:center;justify-content:center;padding:14px;z-index:900}.field-modal.open{display:flex}.field-box{width:min(560px,100%);background:#07382e;border:2px solid #ffd85a;border-radius:16px;padding:18px;box-shadow:0 12px 40px #0009}.field-cards{display:flex;justify-content:center;align-items:center;gap:5px;flex-wrap:wrap;min-height:90px;margin:14px 0}.field-close{display:block;margin-left:auto}.playing{cursor:pointer}.playing:focus{outline:2px solid var(--gold);outline-offset:3px}
+.q-modal{position:fixed;inset:0;background:#001a16dd;display:none;align-items:center;justify-content:center;padding:14px;z-index:1000}.q-modal.open{display:flex}.q-box{width:min(760px,100%);max-height:92vh;overflow:auto;background:#07382e;border:2px solid #ffd85a;border-radius:16px;padding:18px;box-shadow:0 12px 40px #0009}.q-options{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:14px 0}.q-options button{min-height:46px}.q-options button.chosen{outline:3px solid #ffd85a;background:linear-gradient(#a65e12,#77400a)}.q-hand{display:none;border:1px solid #478f81;border-radius:10px;padding:10px;margin-top:12px}.q-hand.open{display:block}.q-hand-cards{display:flex;flex-wrap:wrap;justify-content:center;gap:4px}.q-hand-cards .card{width:43px;height:64px;font-size:12px}.q-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}.q-help{color:#d7eeee;font-size:13px}
+@media(max-width:900px){.layout{grid-template-columns:1fr}.rules{order:2}.players{grid-template-columns:repeat(3,minmax(0,1fr))}.rules table{font-size:12px}}
+@media(max-width:500px){header{padding:10px}.layout{padding:0 8px 12px}.players{gap:5px}.player{padding:7px 3px;font-size:12px}.card{width:44px;height:68px;padding:4px}.card .big{font-size:21px}.hand{gap:2px}.center{gap:10px}.pile{width:90px}}
 </style>
 </head>
 <body>
-<header>
-<h1>👑 大富豪 <span style="font-size:.55em;font-weight:500">～ローカル対戦～</span></h1>
-<div class="top-actions">
-<button id="newGame">新しいゲーム</button>
-<button id="showRules">ルール確認</button>
-</div>
-</header>
-
+<header><h1>👑 大富豪 <span style="font-size:.55em;font-weight:500">～ローカル対戦～</span></h1><div class="top-actions"><button id="newGame">新しいゲーム</button><button id="showRules">ルール確認</button></div></header>
 <div class="layout">
 <section class="board">
  <div class="statusbar">
@@ -147,777 +24,182 @@ button:disabled{opacity:.45;cursor:not-allowed}
   <div class="panel"><div class="label">場の状態</div><div class="value" id="fieldLabel">場にカードはありません</div></div>
   <div class="panel"><div class="label">ゲーム状況</div><div class="value" id="gameLabel">プレイ中</div></div>
  </div>
-
  <div class="players" id="players"></div>
-
  <div class="center">
-  <div class="pile">
-   <div class="label">山札</div>
-   <div class="card back" style="margin:7px auto"></div>
-   <div id="deckCount">残り 0 枚</div>
-  </div>
-  <div style="flex:1;min-width:100px">
-   <div class="label">場に出ているカード</div>
-   <div class="playing" id="tableCards" role="button" tabindex="0" aria-label="場に出されたカードの履歴を表示">
-    <span class="subtle">最初のカードを出そう</span>
-   </div>
-   <div class="inspect-hint">👆 クリック／タッチで、この場に出されたカードを確認</div>
-   <div class="notice" id="notice" aria-live="polite">♦3を持つ人からスタート</div>
-  </div>
-  <div class="pile">
-   <div class="label">最後に出たカード</div>
-   <div id="lastCard" style="display:flex;justify-content:center;margin:7px"></div>
-   <div class="subtle" id="lastPlayer">なし</div>
-  </div>
+  <div class="pile"><div class="label">山札</div><div class="card back" style="margin:7px auto"></div><div id="deckCount">残り 0 枚</div></div>
+  <div style="flex:1;min-width:100px"><div class="label">場に出ているカード</div><div class="playing" id="tableCards"><span class="subtle">最初のカードを出そう</span></div><div class="notice" id="notice" aria-live="polite">♦3を持つ人からスタート</div></div>
+  <div class="pile"><div class="label">最後に出たカード</div><div id="lastCard" style="display:flex;justify-content:center;margin:7px"></div><div class="subtle" id="lastPlayer">なし</div></div>
  </div>
-
- <div class="panel">
-  <div style="font-weight:800">現在有効な効果</div>
-  <div class="effect-list" id="activeEffects"><span class="effect none">なし</span></div>
-  <div class="subtle" style="margin-top:7px">効果が複数ある場合は同時に表示します。</div>
- </div>
-
- <div class="hand-area">
-  <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap">
-   <strong>あなたの手札</strong><span class="subtle" id="handCount">0枚</span>
-  </div>
-  <div class="hand" id="hand"></div>
-  <div class="actions">
-   <button id="playBtn">選択したカードを出す</button>
-   <button id="passBtn">パス</button>
-   <button id="clearBtn" style="background:#44535a">選択解除</button>
-  </div>
-  <div class="subtle" style="text-align:center;margin-top:8px">カードをクリックして選択。連番同じマークは階段として出せます。</div>
- </div>
-
- <div class="panel" style="margin-top:10px">
-  <strong>対戦ログ</strong><div class="log" id="log"></div>
- </div>
+ <div class="panel"><div style="font-weight:800">現在有効な効果</div><div class="effect-list" id="activeEffects"><span class="effect none">なし</span></div><div class="subtle" style="margin-top:7px">効果が複数ある場合は同時に表示します。</div></div>
+ <div class="hand-area"><div style="display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap"><strong>あなたの手札</strong><span class="subtle" id="handCount">0枚</span></div><div class="hand" id="hand"></div><div class="actions"><button id="playBtn">選択したカードを出す</button><button id="passBtn">パス</button><button id="clearBtn" style="background:#44535a">選択解除</button></div><div class="subtle" style="text-align:center;margin-top:8px">カードをクリックして選択。連番同じマークは階段として出せます。</div></div>
+ <div class="panel" style="margin-top:10px"><strong>対戦ログ</strong><div class="log" id="log"></div></div>
 </section>
-
-<aside class="panel rules" id="rulesPanel">
-<h2>📘 カード・ルール</h2>
-<table>
-<thead><tr><th>効果</th><th>説明</th></tr></thead>
-<tbody>
+<aside class="panel rules" id="rulesPanel"><h2>📘 カード・ルール</h2>
+<table><thead><tr><th>効果</th><th>説明</th></tr></thead><tbody>
 <tr><td>♠3返し</td><td>ジョーカーに対してスペードの3を出せる</td></tr>
-<tr><td>4止め</td><td>4を出した時点で場を流す</td></tr>
+<tr><td>4止め</td><td>4止めが発動する（4を出した時点で場を流す）</td></tr>
 <tr><td>5スキップ</td><td>次のプレイヤーを飛ばす</td></tr>
 <tr><td>7渡し</td><td>カードを次のプレイヤーに渡す</td></tr>
 <tr><td>8切り</td><td>場を流して、自分から再開</td></tr>
 <tr><td>9能力無効化</td><td>9でカードの能力を無効化</td></tr>
-<tr><td>10捨て</td><td>出した10の枚数分、手札から捨てる</td></tr>
+<tr><td>10捨て</td><td>指定された枚数のカードを捨てる（出した10の枚数分）</td></tr>
 <tr><td>Jバック</td><td>一時的にカードの強さを逆転</td></tr>
-<tr><td>Qボンバー</td><td>宣言した数字のカードを全員の手札から破壊する</td></tr>
+<tr><td>Qボンバー</td><td>Qで指定した数字のカードを全員の手札から破壊する</td></tr>
 <tr><td>縛り</td><td>同じマークなどの条件で場を縛る</td></tr>
 <tr><td>階段</td><td>同じマークの連続した数字をまとめて出せる</td></tr>
 <tr><td>禁止上がり</td><td>2・ジョーカーなど禁止カードで上がると反則</td></tr>
 <tr><td>都落ち</td><td>この版では未実装</td></tr>
-</tbody>
-</table>
-<div class="small"><b>最初のプレイヤー：</b> ♦3を持っている人。<br>CPUはカードを出した後、少し待ってから次の行動をします。</div>
+</tbody></table>
+<div class="small"><b>最初のプレイヤー：</b> ♦3を持っている人。<br>CPUはカードを出した後、2秒待ってから次の行動をします。</div>
 <button class="rulebutton" id="hideRules">ルールを閉じる</button>
 </aside>
 </div>
-
-<!-- 場のカード履歴ポップアップ -->
-<div class="field-modal" id="fieldModal" role="dialog" aria-modal="true" aria-labelledby="fieldTitle">
- <div class="field-box">
-  <h2 id="fieldTitle">🃏 この場に出されたカード一覧</h2>
-  <div class="field-summary" id="fieldSummary"></div>
-  <div class="field-card-list" id="fieldCardList"></div>
-  <button type="button" class="field-close" id="closeFieldModal">閉じる</button>
- </div>
-</div>
-
-<!-- Qボンバーの宣言画面 -->
-<div class="q-modal" id="qModal" role="dialog" aria-modal="true" aria-labelledby="qTitle">
- <div class="q-box">
-  <h2 id="qTitle">Qボンバー：破壊する数字を宣言</h2>
-  <p class="q-help">破壊する数字を必ず1つ選んで「宣言する」を押してください。手札を見るだけではゲームは進みません。</p>
-  <div class="q-options" id="qOptions"></div>
-  <div class="q-actions">
-   <button type="button" id="qHandToggle">自分の手札を見る</button>
-   <button type="button" id="qConfirm" disabled>宣言する</button>
-  </div>
-  <div class="q-hand" id="qHandPreview">
-   <strong>あなたの手札</strong>
-   <div class="q-hand-cards" id="qHandCards"></div>
-  </div>
- </div>
-</div>
-
+<div class="field-modal" id="fieldModal" role="dialog" aria-modal="true" aria-labelledby="fieldTitle"><div class="field-box"><h2 id="fieldTitle">現在、場に出ているカード</h2><div class="field-cards" id="fieldPopupCards"></div><button type="button" class="field-close" id="fieldClose">閉じる</button></div></div>
+<div class="q-modal" id="qModal" role="dialog" aria-modal="true" aria-labelledby="qTitle"><div class="q-box"><h2 id="qTitle">Qボンバー：破壊する数字を宣言</h2><p class="q-help">破壊する数字を必ず1つ選んで「宣言する」を押してください。手札を見るだけではゲームは進みません。</p><div class="q-options" id="qOptions"></div><div class="q-actions"><button type="button" id="qHandToggle">自分の手札を見る</button><button type="button" id="qConfirm" disabled>宣言する</button></div><div class="q-hand" id="qHandPreview"><strong>あなたの手札</strong><div class="q-hand-cards" id="qHandCards"></div></div></div></div>
 <script>
-const SUITS=['♠','♥','♦','♣'];
-const RANKS=[3,4,5,6,7,8,9,10,11,12,13,14,15];
-
+const SUITS=['♠','♥','♦','♣'], RANKS=[3,4,5,6,7,8,9,10,11,12,13,14,15];
 const rankName=r=>({11:'J',12:'Q',13:'K',14:'A',15:'2',16:'ジョーカー'}[r]||String(r));
 const CPU_Q_RANKS=[4,7,10,12,14,15,16];
-let qSelectedRank=null;
-
-/*
- turnCardHistory：現在進行中の場で出されたカード履歴
- lastTurnCardHistory：直前に場が流れるまでのカード履歴
-*/
-let turnCardHistory=[];
-let lastTurnCardHistory=[];
-
+let qSelectedRank=null, qResolve=null;
 const suitColor=s=>s==='♥'||s==='♦'?'red':'';
-const rankPower=r=>{
- let p=({3:1,4:2,5:3,6:4,7:5,8:6,9:7,10:8,11:9,12:10,13:11,14:12,15:13,16:14})[r]||r;
- return state.jBack?15-p:p;
-};
+const rankPower=r=>{let p=({3:1,4:2,5:3,6:4,7:5,8:6,9:7,10:8,11:9,12:10,13:11,14:12,15:13,16:14})[r]||r;return state.jBack?15-p:p};
 const cardText=c=>c.rank===16?'JOKER':rankName(c.rank)+c.suit;
-
-const cardEl=(c,extra='')=>{
- let d=document.createElement('div');
- d.className='card '+suitColor(c.suit)+' '+extra;
- d.innerHTML=`<span class="corner">${rankName(c.rank)}${c.suit||''}</span><span class="big">${c.rank===16?'🃏':c.suit}</span><span class="corner bottom">${rankName(c.rank)}${c.suit||''}</span>`;
- return d;
-};
-
+const cardEl=(c,extra='')=>{let d=document.createElement('div');d.className='card '+suitColor(c.suit)+' '+extra;d.innerHTML=`<span class="corner">${rankName(c.rank)}${c.suit||''}</span><span class="big">${c.rank===16?'🃏':c.suit}</span><span class="corner bottom">${rankName(c.rank)}${c.suit||''}</span>`;return d};
 let state;
-
-function shuffled(a){
- for(let i=a.length-1;i>0;i--){
-  let j=Math.floor(Math.random()*(i+1));
-  [a[i],a[j]]=[a[j],a[i]];
- }
- return a;
-}
-
+function shuffled(a){for(let i=a.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
 function newGame(){
- let deck=[];
- for(let s of SUITS)for(let r of RANKS)deck.push({suit:s,rank:r,id:s+r});
- deck.push({suit:'',rank:16,id:'joker1'},{suit:'',rank:16,id:'joker2'});
- shuffled(deck);
-
- let players=[
-  {name:'あなた',hand:[],human:true},
-  {name:'CPU 1',hand:[]},
-  {name:'CPU 2',hand:[]},
-  {name:'CPU 3',hand:[]}
- ];
-
+ let deck=[];for(let s of SUITS)for(let r of RANKS)deck.push({suit:s,rank:r,id:s+r});deck.push({suit:'',rank:16,id:'joker1'},{suit:'',rank:16,id:'joker2'});shuffled(deck);
+ let players=[{name:'あなた',hand:[],human:true},{name:'CPU 1',hand:[]},{name:'CPU 2',hand:[]},{name:'CPU 3',hand:[]}];
  for(let i=0;i<deck.length;i++)players[i%4].hand.push(deck[i]);
  players.forEach(p=>p.hand.sort((a,b)=>a.rank-b.rank||SUITS.indexOf(a.suit)-SUITS.indexOf(b.suit)));
-
  let start=players.findIndex(p=>p.hand.some(c=>c.suit==='♦'&&c.rank===3));
-
- state={
-  players,turn:start,deck:[],table:[],lastCards:[],lastPlayer:-1,
-  passCount:0,selected:new Set(),jBack:false,lockSuit:null,effects:[],
-  finished:false,finishOrder:[],pendingQ:false,turnSerial:0,firstMove:true
- };
-
- turnCardHistory=[];
- lastTurnCardHistory=[];
-
- document.getElementById('log').innerHTML='';
- log('ゲーム開始。♦3を持つ'+players[start].name+'からスタート。');
- closeFieldModal();
- document.getElementById('qModal').classList.remove('open');
- render();
- if(start!==0)cpuTurn();
+ state={players,turn:start,deck:[],table:[],lastCards:[],lastPlayer:-1,passCount:0,selected:new Set(),jBack:false,lockSuit:null,effects:[],finished:false,finishOrder:[],pendingQ:false,turnSerial:0,firstMove:true};
+ log('ゲーム開始。♦3を持つ'+players[start].name+'からスタート。');render();if(start!==0)cpuTurn();
 }
-
-function log(s){
- let el=document.getElementById('log');
- if(!el)return;
- let d=document.createElement('div');
- d.textContent=s;
- el.prepend(d);
- while(el.children.length>25)el.lastChild.remove();
-}
-
+function log(s){let el=document.getElementById('log');if(!el)return;let d=document.createElement('div');d.textContent=s;el.prepend(d);while(el.children.length>25)el.lastChild.remove()}
 function current(){return state.players[state.turn]}
-
-function activeNames(){
- let a=[];
- if(state.jBack)a.push('Jバック（強さ逆転）');
- if(state.lockSuit)a.push('縛り（'+state.lockSuit+'）');
- for(let e of state.effects)if(!a.includes(e))a.push(e);
- return a;
-}
-
-/* 場に出されたカードを、プレイヤーごとに履歴として表示 */
-function openFieldModal(){
- const modal=document.getElementById('fieldModal');
- const list=document.getElementById('fieldCardList');
- const summary=document.getElementById('fieldSummary');
-
- list.innerHTML='';
-
- // 場が続いている場合は現在の場の履歴を表示。
- // 場が流れた直後で履歴が空なら、直前の場の履歴を表示。
- const history=turnCardHistory.length?turnCardHistory:lastTurnCardHistory;
-
- if(!history.length){
-  summary.textContent='まだこの場に出されたカードはありません。';
-  const empty=document.createElement('div');
-  empty.className='field-empty';
-  empty.textContent='カードが出されると、ここに履歴が表示されます。';
-  list.appendChild(empty);
- }else{
-  const total=history.reduce((sum,entry)=>sum+entry.cards.length,0);
-  summary.textContent='この場で出されたカード：'+total+'枚／プレイ回数：'+history.length+'回';
-
-  history.forEach((entry,index)=>{
-   const group=document.createElement('div');
-   group.className='history-play';
-
-   const player=document.createElement('div');
-   player.className='history-player';
-   player.textContent=(index+1)+'回目：'+entry.player+'（'+entry.cards.length+'枚）';
-   group.appendChild(player);
-
-   const cards=document.createElement('div');
-   cards.className='history-cards';
-
-   entry.cards.forEach(c=>{
-    cards.appendChild(cardEl(c));
-   });
-
-   group.appendChild(cards);
-   list.appendChild(group);
-  });
- }
-
- modal.classList.add('open');
- document.getElementById('closeFieldModal').focus();
-}
-
-function closeFieldModal(){
- document.getElementById('fieldModal').classList.remove('open');
-}
-
-document.getElementById('tableCards').addEventListener('click',openFieldModal);
-
-document.getElementById('tableCards').addEventListener('keydown',e=>{
- if(e.key==='Enter'||e.key===' '){
-  e.preventDefault();
-  openFieldModal();
- }
-});
-
-document.getElementById('closeFieldModal').addEventListener('click',closeFieldModal);
-
-document.getElementById('fieldModal').addEventListener('click',e=>{
- if(e.target.id==='fieldModal')closeFieldModal();
-});
-
-document.addEventListener('keydown',e=>{
- if(e.key==='Escape'){
-  closeFieldModal();
- }
-});
-
+function activeNames(){let a=[];if(state.jBack)a.push('Jバック（強さ逆転）');if(state.lockSuit)a.push('縛り（'+state.lockSuit+'）');for(let e of state.effects)if(!a.includes(e))a.push(e);return a}
 function render(){
  if(!state)return;
-
  document.getElementById('turnLabel').textContent=current().name+(state.turn===0?'（あなた）':'');
  document.getElementById('fieldLabel').textContent=state.table.length?state.table.length+'枚出し':'場にカードはありません';
  document.getElementById('gameLabel').textContent=state.finished?'ゲーム終了':'プレイ中';
  document.getElementById('deckCount').textContent='残り '+state.deck.length+' 枚';
-
- let ps=document.getElementById('players');
- ps.innerHTML='';
-
- state.players.forEach((p,i)=>{
-  let d=document.createElement('div');
-  d.className='player'+(i===state.turn&&!state.finished?' active':'');
-  d.innerHTML=`<b>${p.name}</b><div>${p.finished?'上がり！':'残り '+p.hand.length+' 枚'}</div><div class="cards-back">${p.human?'':'▰ '.repeat(Math.min(p.hand.length,7))}</div>`;
-  ps.append(d);
- });
-
- let hand=document.getElementById('hand');
- hand.innerHTML='';
-
- state.players[0].hand.forEach(c=>{
-  let d=cardEl(c,state.selected.has(c.id)?'selected':'');
-  d.title=cardText(c);
-  d.onclick=()=>{
-   if(state.finished||state.turn!==0||state.pendingQ)return;
-   if(state.selected.has(c.id))state.selected.delete(c.id);
-   else state.selected.add(c.id);
-   renderHandOnly();
-  };
-  hand.append(d);
- });
-
+ let ps=document.getElementById('players');ps.innerHTML='';
+ state.players.forEach((p,i)=>{let d=document.createElement('div');d.className='player'+(i===state.turn&&!state.finished?' active':'');d.innerHTML=`<b>${p.name}</b><div>${p.finished?'上がり！':'残り '+p.hand.length+' 枚'}</div><div class="cards-back">${p.human?'':'▰ '.repeat(Math.min(p.hand.length,7))}</div>`;ps.append(d)});
+ let hand=document.getElementById('hand');hand.innerHTML='';state.players[0].hand.forEach(c=>{let d=cardEl(c,state.selected.has(c.id)?'selected':'');d.title=cardText(c);d.onclick=()=>{if(state.finished||state.turn!==0)return;if(state.selected.has(c.id))state.selected.delete(c.id);else state.selected.add(c.id);renderHandOnly()};hand.append(d)});
  document.getElementById('handCount').textContent=state.players[0].hand.length+'枚';
-
- let tc=document.getElementById('tableCards');
- tc.innerHTML='';
-
- state.table.forEach(c=>tc.append(cardEl(c)));
-
- if(!state.table.length){
-  tc.innerHTML='<span class="subtle">最初のカードを出そう</span>';
- }
-
- let lc=document.getElementById('lastCard');
- lc.innerHTML='';
-
- if(state.lastCards.length)state.lastCards.forEach(c=>lc.append(cardEl(c)));
- else lc.textContent='—';
-
- document.getElementById('lastPlayer').textContent=state.lastPlayer<0?'なし':state.players[state.lastPlayer].name;
-
- let ef=document.getElementById('activeEffects');
- ef.innerHTML='';
-
- let names=activeNames();
-
- if(!names.length)ef.innerHTML='<span class="effect none">なし</span>';
- else names.forEach(n=>{
-  let s=document.createElement('span');
-  s.className='effect';
-  s.textContent=n;
-  ef.append(s);
- });
-
- document.getElementById('playBtn').disabled=state.finished||state.turn!==0||!state.selected.size||state.pendingQ;
- document.getElementById('passBtn').disabled=state.finished||state.turn!==0||state.pendingQ;
- document.getElementById('clearBtn').disabled=state.finished||state.turn!==0||state.pendingQ;
+ let tc=document.getElementById('tableCards');tc.innerHTML='';(state.table.length?state.table:[]).forEach(c=>tc.append(cardEl(c)));if(!state.table.length)tc.innerHTML='<span class="subtle">最初のカードを出そう</span>';
+ let lc=document.getElementById('lastCard');lc.innerHTML='';if(state.lastCards.length)state.lastCards.forEach(c=>lc.append(cardEl(c)));else lc.textContent='—';document.getElementById('lastPlayer').textContent=state.lastPlayer<0?'なし':state.players[state.lastPlayer].name;
+ let ef=document.getElementById('activeEffects');ef.innerHTML='';let names=activeNames();if(!names.length)ef.innerHTML='<span class="effect none">なし</span>';else names.forEach(n=>{let s=document.createElement('span');s.className='effect';s.textContent=n;ef.append(s)});
+ document.getElementById('playBtn').disabled=state.finished||state.turn!==0||!state.selected.size;
+ document.getElementById('passBtn').disabled=state.finished||state.turn!==0;
+ document.getElementById('clearBtn').disabled=state.finished||state.turn!==0;
 }
-
-function renderHandOnly(){
- let selected=new Set(state.selected);
- let hand=document.getElementById('hand');
-
- [...hand.children].forEach((d,i)=>{
-  let c=state.players[0].hand[i];
-  d.classList.toggle('selected',selected.has(c.id));
- });
-
- document.getElementById('playBtn').disabled=!selected.size||state.pendingQ;
-}
-
-function selectedCards(){
- return state.players[0].hand.filter(c=>state.selected.has(c.id));
-}
-
+function renderHandOnly(){let selected=new Set(state.selected);let hand=document.getElementById('hand');[...hand.children].forEach((d,i)=>{let c=state.players[0].hand[i];d.classList.toggle('selected',selected.has(c.id))});document.getElementById('playBtn').disabled=!selected.size}
+function selectedCards(){return state.players[0].hand.filter(c=>state.selected.has(c.id))}
 function validSet(cards){
  if(!cards.length)return false;
  if(cards.some(c=>c.rank===16)&&cards.length>1)return false;
  if(cards.length===1)return true;
  if(cards.every(c=>c.rank===cards[0].rank))return true;
-
- return cards.every(c=>c.suit===cards[0].suit)&&
-  cards.map(c=>c.rank).sort((a,b)=>a-b).every((r,i,a)=>i===0||r===a[i-1]+1);
+ let non=cards.filter(c=>c.rank!==16);return non.length===cards.length&&cards.every(c=>c.suit===cards[0].suit)&&cards.map(c=>c.rank).sort((a,b)=>a-b).every((r,i,a)=>i===0||r===a[i-1]+1);
 }
-
 function canBeat(cards){
  if(!validSet(cards))return false;
  if(!state.table.length)return true;
  if(cards.length!==state.table.length)return false;
  if(state.lockSuit&&cards.some(c=>c.suit!==state.lockSuit))return false;
-
  if(state.table.some(c=>c.rank===16)&&cards.length===1&&cards[0].rank===3&&cards[0].suit==='♠')return true;
-
- if(cards.length>1&&!cards.every(c=>c.rank===cards[0].rank)){
-  return cards[0].rank>state.table[0].rank;
- }
-
+ if(cards.length>1&&!cards.every(c=>c.rank===cards[0].rank))return cards[0].rank>state.table[0].rank;
  return rankPower(cards[0].rank)>rankPower(state.table[0].rank);
 }
-
-function removeCards(p,cards){
- let ids=new Set(cards.map(c=>c.id));
- p.hand=p.hand.filter(c=>!ids.has(c.id));
-}
-
-function advance(n=1){
- for(let k=0;k<n;k++){
-  let tries=0;
-  do{
-   state.turn=(state.turn+1)%state.players.length;
-   tries++;
-  }while((state.players[state.turn].finished||state.players[state.turn].hand.length===0)&&tries<5);
- }
-}
-
-/* 場が流れたら、その場の履歴を保存して次の場へ */
-function clearTrick(startIndex){
- if(turnCardHistory.length){
-  lastTurnCardHistory=turnCardHistory.map(entry=>({
-   player:entry.player,
-   cards:entry.cards.map(c=>({...c}))
-  }));
- }
-
- turnCardHistory=[];
-
- state.table=[];
- state.lastCards=[];
- state.passCount=0;
- state.lockSuit=null;
- state.effects=[];
- state.jBack=false;
- state.lastPlayer=-1;
- state.turn=startIndex;
-
- log('場が流れました。'+state.players[startIndex].name+'から再開。');
-}
-
-function finishIfNeeded(p){
- if(p.hand.length===0&&!p.finished){
-  let last=state.lastCards;
-  let banned=last.some(c=>[15,16].includes(c.rank));
-
-  if(banned){
-   log(p.name+'は上がり禁止カードで反則。最後に出したカードを手札に戻します。');
-   p.hand.push(...last);
-   p.finished=false;
-   return false;
-  }
-
-  p.finished=true;
-  state.finishOrder.push(p.name);
-  log(p.name+'が上がり！');
-
-  if(state.players.filter(x=>!x.finished).length<=1){
-   state.finished=true;
-   let loser=state.players.find(x=>!x.finished);
-   if(loser)log('ゲーム終了。最後まで残ったのは'+loser.name+'。');
-   return true;
-  }
- }
-
- return false;
-}
-
+function removeCards(p,cards){let ids=new Set(cards.map(c=>c.id));p.hand=p.hand.filter(c=>!ids.has(c.id))}
+function advance(n=1){for(let k=0;k<n;k++){let tries=0;do{state.turn=(state.turn+1)%state.players.length;tries++}while((state.players[state.turn].finished||state.players[state.turn].hand.length===0)&&tries<5)}}
+function clearTrick(startIndex){state.table=[];state.lastCards=[];state.passCount=0;state.lockSuit=null;state.effects=[];state.jBack=false;state.lastPlayer=-1;state.turn=startIndex;log('場が流れました。'+state.players[startIndex].name+'から再開。');}
+function finishIfNeeded(p){if(p.hand.length===0&&!p.finished){let last=state.lastCards;let banned=last.some(c=>[15,16].includes(c.rank));if(banned){log(p.name+'は上がり禁止カードで反則。最後に出したカードを手札に戻します。p.hand');p.hand.push(...last);p.finished=false;return false;}p.finished=true;state.finishOrder.push(p.name);log(p.name+'が上がり！');if(state.players.filter(x=>!x.finished).length<=1){state.finished=true;let loser=state.players.find(x=>!x.finished);if(loser)log('ゲーム終了。最後まで残ったのは'+loser.name+'。');return true}}return false}
 function playCards(cards,byCpu=false){
- let p=current();
-
- if(state.pendingQ)return false;
-
- if(!cards.length||!canBeat(cards)){
-  if(!byCpu)alert('そのカードは出せません。枚数・階段・場の強さを確認してください。');
-  return false;
- }
-
- const spadeThreeReversal=
-  state.table.length===1&&state.table[0].rank===16&&
-  cards.length===1&&cards[0].rank===3&&cards[0].suit==='♠';
-
- removeCards(p,cards);
- state.selected.clear();
-
- // 今回出されたカードを履歴に追加する
- turnCardHistory.push({
-  player:p.name,
-  cards:cards.map(c=>({...c}))
- });
-
- state.table=cards.slice();
- state.lastCards=cards.slice();
- state.lastPlayer=state.turn;
- state.passCount=0;
-
- if(cards.length&&cards.every(c=>c.suit&&c.suit===cards[0].suit))state.lockSuit=cards[0].suit;
- else state.lockSuit=null;
-
- log(p.name+'：'+cards.map(cardText).join(' '));
-
+ let p=current();if(state.pendingQ)return false;if(!cards.length||!canBeat(cards)){if(!byCpu)alert('そのカードは出せません。枚数・階段・場の強さを確認してください。');return false}
+ const spadeThreeReversal=state.table.length===1&&state.table[0].rank===16&&cards.length===1&&cards[0].rank===3&&cards[0].suit==='♠';
+ removeCards(p,cards);state.selected.clear();state.table=cards.slice();state.lastCards=cards.slice();state.lastPlayer=state.turn;state.passCount=0;
+ // Suit lock when consecutive plays share a suit
+ if(cards.length&&cards.every(c=>c.suit&&c.suit===cards[0].suit))state.lockSuit=cards[0].suit;else state.lockSuit=null;
+ let msg=p.name+'：'+cards.map(cardText).join(' ');log(msg);
  let clearNow=false,skip=0;
-
- if(cards.some(c=>c.rank===4)){
-  state.effects.push('4止め');
-  clearNow=true;
- }
-
- if(cards.some(c=>c.rank===5)){
-  state.effects.push('5スキップ');
-  skip=1;
- }
-
- if(cards.some(c=>c.rank===7)){
-  state.effects.push('7渡し');
-
-  let target=(state.turn+1)%4;
-
-  if(p.hand.length){
-   let give=p.hand.pop();
-   state.players[target].hand.push(give);
-   log(p.name+'が'+cardText(give)+'を'+state.players[target].name+'に渡した');
-  }
- }
-
- if(cards.some(c=>c.rank===8)){
-  state.effects.push('8切り');
-  clearTrick(state.turn);
-  render();
-  if(state.turn!==0)cpuTurn();
-  return true;
- }
-
- if(cards.some(c=>c.rank===9)){
-  state.effects.push('9能力無効化');
-  state.jBack=false;
-  state.lockSuit=null;
-  log('9の効果で一時効果を無効化');
- }
-
- if(cards.some(c=>c.rank===10)){
-  let n=cards.filter(c=>c.rank===10).length;
-  state.effects.push('10捨て（'+n+'枚）');
-
-  for(let i=0;i<n&&p.hand.length;i++){
-   let tossed=p.hand.pop();
-   log(p.name+'が'+cardText(tossed)+'を捨てた');
-  }
- }
-
- if(cards.some(c=>c.rank===11)){
-  state.jBack=!state.jBack;
-  state.effects.push('Jバック');
-  log('カードの強さが一時的に逆転');
- }
-
- if(cards.some(c=>c.rank===12)){
-  state.effects.push('Qボンバー');
-  state.pendingQ=true;
-  render();
-
-  document.getElementById('notice').textContent='Qボンバー：破壊する数字を必ず宣言してください';
-
-  if(byCpu){
-   const rank=CPU_Q_RANKS[Math.floor(Math.random()*CPU_Q_RANKS.length)];
-   log(p.name+'のQボンバー宣言：'+rankName(rank));
-   applyQ(rank,p);
-  }else{
-   openQModal();
-  }
-
-  return true;
- }
-
- if(spadeThreeReversal){
-  state.effects.push('♠3返し');
-  clearNow=true;
-  log('♠3返し！ジョーカーを上書きした'+p.name+'が続けて行動します');
- }
-
- if(finishIfNeeded(p)){
-  render();
-  return true;
- }
-
- if(clearNow){
-  clearTrick(state.turn);
-  render();
-  if(state.turn!==0)cpuTurn();
-  return true;
- }
-
- if(skip)advance(2);
- else advance(1);
-
- render();
-
- document.getElementById('notice').textContent=byCpu?p.name+'がカードを出しました':'カードを出しました';
-
- if(state.turn!==0)cpuTurn();
-
- return true;
+ if(cards.some(c=>c.rank===4)){state.effects.push('4止め');clearNow=true}
+ if(cards.some(c=>c.rank===5)){state.effects.push('5スキップ');skip=1}
+ if(cards.some(c=>c.rank===7)){state.effects.push('7渡し');let target=(state.turn+1)%4;if(p.hand.length){let give=p.hand.pop();state.players[target].hand.push(give);log(p.name+'が'+cardText(give)+'を'+state.players[target].name+'に渡した')} }
+ if(cards.some(c=>c.rank===8)){state.effects.push('8切り');clearTrick(state.turn);render();if(state.turn!==0)cpuTurn();return true}
+ if(cards.some(c=>c.rank===9)){state.effects.push('9能力無効化');state.jBack=false;state.lockSuit=null;log('9の効果で一時効果を無効化')}
+ if(cards.some(c=>c.rank===10)){let n=cards.filter(c=>c.rank===10).length;state.effects.push('10捨て（'+n+'枚）');for(let i=0;i<n&&p.hand.length;i++){let tossed=p.hand.pop();log(p.name+'が'+cardText(tossed)+'を捨てた')}}
+ if(cards.some(c=>c.rank===11)){state.jBack=!state.jBack;state.effects.push('Jバック');log('カードの強さが一時的に逆転')}
+ if(cards.some(c=>c.rank===12)){state.effects.push('Qボンバー');state.pendingQ=true;render();document.getElementById('notice').textContent='Qボンバー：破壊する数字を必ず宣言してください';if(byCpu){const rank=CPU_Q_RANKS[Math.floor(Math.random()*CPU_Q_RANKS.length)];log(p.name+'のQボンバー宣言：'+rankName(rank));applyQ(rank,p)}else{openQModal()}return true}
+ if(spadeThreeReversal){state.effects.push('♠3返し');clearNow=true;log('♠3返し！ジョーカーを上書きした'+p.name+'が続けて行動します')}
+ if(finishIfNeeded(p)){render();return true}
+ if(clearNow){clearTrick(state.turn);render();if(state.turn!==0)cpuTurn();return true}
+ if(skip){advance(2)}else advance(1);
+ render();document.getElementById('notice').textContent=byCpu?p.name+'がカードを出しました':'カードを出しました';
+ if(state.turn!==0)cpuTurn();return true;
 }
-
+function mostCommon(a){let counts={};a.forEach(x=>counts[x]=(counts[x]||0)+1);return Number(Object.keys(counts).sort((x,y)=>counts[y]-counts[x])[0])}
 function openQModal(){
- qSelectedRank=null;
-
- const modal=document.getElementById('qModal');
- const opts=document.getElementById('qOptions');
- const confirmBtn=document.getElementById('qConfirm');
- const preview=document.getElementById('qHandPreview');
-
- opts.innerHTML='';
- confirmBtn.disabled=true;
- preview.classList.remove('open');
- document.getElementById('qHandToggle').textContent='自分の手札を見る';
-
- // Qボンバーで宣言できる数字
- const ranks=[...RANKS,16];
-
- ranks.forEach(rank=>{
-  const b=document.createElement('button');
-  b.type='button';
-  b.textContent=rankName(rank);
-
-  b.onclick=()=>{
-   qSelectedRank=rank;
-   [...opts.children].forEach(x=>x.classList.toggle('chosen',x===b));
-   confirmBtn.disabled=false;
-  };
-
-  opts.appendChild(b);
- });
-
- const handBox=document.getElementById('qHandCards');
- handBox.innerHTML='';
-
- state.players[0].hand.forEach(c=>handBox.append(cardEl(c)));
-
- modal.classList.add('open');
+ qSelectedRank=null;const modal=document.getElementById('qModal'),opts=document.getElementById('qOptions'),confirmBtn=document.getElementById('qConfirm'),preview=document.getElementById('qHandPreview');opts.innerHTML='';confirmBtn.disabled=true;preview.classList.remove('open');document.getElementById('qHandToggle').textContent='自分の手札を見る';
+ const ranks=[...RANKS,16];ranks.forEach(rank=>{const b=document.createElement('button');b.type='button';b.textContent=rankName(rank);b.onclick=()=>{qSelectedRank=rank;[...opts.children].forEach(x=>x.classList.toggle('chosen',x===b));confirmBtn.disabled=false};opts.appendChild(b)});
+ const handBox=document.getElementById('qHandCards');handBox.innerHTML='';state.players[0].hand.forEach(c=>handBox.append(cardEl(c)));modal.classList.add('open');
 }
-
-document.getElementById('qHandToggle').addEventListener('click',()=>{
- const preview=document.getElementById('qHandPreview');
- preview.classList.toggle('open');
-
- document.getElementById('qHandToggle').textContent=
-  preview.classList.contains('open')?'手札を閉じる':'自分の手札を見る';
-});
-
-document.getElementById('qConfirm').addEventListener('click',()=>{
- if(qSelectedRank===null)return;
-
- const rank=qSelectedRank;
- document.getElementById('qModal').classList.remove('open');
- state.pendingQ=false;
-
- const p=current();
- applyQ(rank,p);
-});
-
-function applyQ(rank,p){
- if(!Number.isFinite(rank)||rank<3||rank>16){
-  log('Qボンバーの数字指定が無効です');
-  return;
- }
-
- let destroyed=0;
-
- state.players.forEach(pl=>{
-  let before=pl.hand.length;
-  pl.hand=pl.hand.filter(c=>c.rank!==rank);
-  destroyed+=before-pl.hand.length;
- });
-
- state.selected.clear();
- state.pendingQ=false;
-
- log('Qボンバー：'+rankName(rank)+'を'+destroyed+'枚破壊');
-
- if(p.hand.length===0)finishIfNeeded(p);
-
- advance(1);
- render();
-
- if(state.turn!==0)cpuTurn();
-}
-
+document.getElementById('qHandToggle').addEventListener('click',()=>{const preview=document.getElementById('qHandPreview');preview.classList.toggle('open');document.getElementById('qHandToggle').textContent=preview.classList.contains('open')?'手札を閉じる':'自分の手札を見る'});
+document.getElementById('qConfirm').addEventListener('click',()=>{if(qSelectedRank===null)return;const rank=qSelectedRank;document.getElementById('qModal').classList.remove('open');state.pendingQ=false;const p=current();applyQ(rank,p)});
+function applyQ(rank,p){if(!Number.isFinite(rank)||rank<3||rank>16){log('Qボンバーの数字指定が無効です');return}let destroyed=0;state.players.forEach(pl=>{let before=pl.hand.length;pl.hand=pl.hand.filter(c=>c.rank!==rank);destroyed+=before-pl.hand.length});state.selected.clear();state.pendingQ=false;log('Qボンバー：'+rankName(rank)+'を'+destroyed+'枚破壊');if(p.hand.length===0)finishIfNeeded(p);advance(1);render();if(state.turn!==0)cpuTurn()}
 function pass(byCpu=false){
- if(state.finished||state.pendingQ)return;
-
- if(!state.table.length){
-  if(!byCpu)alert('場が空のときはパスできません。');
-  return;
- }
-
- state.passCount++;
- log(current().name+'はパス');
-
- if(state.passCount>=state.players.filter(p=>!p.finished).length-1){
-  clearTrick(state.lastPlayer>=0?state.lastPlayer:state.turn);
-  render();
-  if(state.turn!==0)cpuTurn();
-  return;
- }
-
- advance(1);
- render();
-
- if(state.turn!==0)cpuTurn();
+ if(state.finished)return;
+ if(!state.table.length){if(!byCpu)alert('場が空のときはパスできません。');return}
+ state.passCount++;log(current().name+'はパス');
+ if(state.passCount>=state.players.filter(p=>!p.finished).length-1){clearTrick(state.lastPlayer>=0?state.lastPlayer:state.turn);render();if(state.turn!==0)cpuTurn();return}
+ advance(1);render();if(state.turn!==0)cpuTurn();
 }
-
 function cpuTurn(){
- if(state.finished||state.turn===0||state.pendingQ)return;
-
- const serial=++state.turnSerial;
- let p=current();
-
+ if(state.finished||state.turn===0)return;
+ const serial=++state.turnSerial;let p=current();
  setTimeout(()=>{
-  if(state.finished||state.turn===0||serial!==state.turnSerial||state.pendingQ)return;
-
+  if(state.finished||state.turn===0||serial!==state.turnSerial)return;
+  // Simple CPU: find lowest legal single/pair/stair; otherwise pass.
   let options=[];
-
-  for(let c of p.hand){
-   if(canBeat([c]))options.push([c]);
-  }
-
-  let byRank={};
-  p.hand.forEach(c=>(byRank[c.rank]??=[]).push(c));
-
-  for(let arr of Object.values(byRank)){
-   if(arr.length>=2){
-    let pair=arr.slice(0,2);
-    if(canBeat(pair))options.push(pair);
-   }
-  }
-
-  for(let s of SUITS){
-   let arr=p.hand.filter(c=>c.suit===s&&c.rank!==16).sort((a,b)=>a.rank-b.rank);
-
-   for(let i=0;i<arr.length;i++){
-    let run=[arr[i]];
-
-    for(let j=i+1;j<arr.length;j++){
-     if(arr[j].rank===run[run.length-1].rank+1)run.push(arr[j]);
-     else if(arr[j].rank>run[run.length-1].rank+1)break;
-
-     if(run.length>=3&&canBeat(run))options.push(run.slice());
-    }
-   }
-  }
-
+  for(let c of p.hand)if(canBeat([c]))options.push([c]);
+  let byRank={};p.hand.forEach(c=>(byRank[c.rank]??=[]).push(c));
+  for(let arr of Object.values(byRank))if(arr.length>=2){let pair=arr.slice(0,2);if(canBeat(pair))options.push(pair)}
+  // Only consider a staircase when the table is empty or has the same count.
+  for(let s of SUITS){let arr=p.hand.filter(c=>c.suit===s&&c.rank!==16).sort((a,b)=>a.rank-b.rank);for(let i=0;i<arr.length;i++){let run=[arr[i]];for(let j=i+1;j<arr.length;j++){if(arr[j].rank===run[run.length-1].rank+1)run.push(arr[j]);else if(arr[j].rank>run[run.length-1].rank+1)break;if(run.length>=3&&canBeat(run))options.push(run.slice())}}}
   options.sort((a,b)=>a.length-b.length||rankPower(a[0].rank)-rankPower(b[0].rank));
-
-  if(!options.length){
-   pass(true);
-   return;
-  }
-
+  if(!options.length){pass(true);return}
   let choice=options[0];
+  // If a Q is played, CPU chooses a rank it has most of.
   playCards(choice,true);
   render();
-
-  if(!state.finished&&!state.pendingQ&&state.turn!==0){
-   setTimeout(()=>{
-    if(!state.finished&&!state.pendingQ&&state.turn!==0)cpuTurn();
-   },2000);
-  }
+  // Explicit 2-second pause after CPU card play before next CPU's move.
+  if(!state.finished&&state.turn!==0)setTimeout(()=>{if(!state.finished&&state.turn!==0)cpuTurn()},2000);
  },650);
 }
-
-document.getElementById('playBtn').onclick=()=>{
- if(state.pendingQ)return;
- playCards(selectedCards());
-};
-
+document.getElementById('playBtn').onclick=()=>{if(state.pendingQ)return;playCards(selectedCards())};
 document.getElementById('passBtn').onclick=()=>pass();
-
-document.getElementById('clearBtn').onclick=()=>{
- if(state.pendingQ)return;
- state.selected.clear();
- render();
-};
-
-document.getElementById('newGame').onclick=()=>{
- if(document.getElementById('qModal').classList.contains('open'))return;
- if(confirm('新しいゲームを始めますか？'))newGame();
-};
-
-document.getElementById('showRules').onclick=()=>{
- document.getElementById('rulesPanel').scrollIntoView({behavior:'smooth',block:'start'});
-};
-
-document.getElementById('hideRules').onclick=()=>{
- document.getElementById('rulesPanel').style.display='none';
-};
-
+document.getElementById('clearBtn').onclick=()=>{state.selected.clear();render()};
+document.getElementById('newGame').onclick=()=>{if(document.getElementById('qModal').classList.contains('open'))return;if(confirm('新しいゲームを始めますか？'))newGame()};
+document.getElementById('showRules').onclick=()=>document.getElementById('rulesPanel').scrollIntoView({behavior:'smooth',block:'start'});
+document.getElementById('hideRules').onclick=()=>document.getElementById('rulesPanel').style.display='none';
+const fieldModal=document.getElementById('fieldModal');
+document.getElementById('tableCards').setAttribute('role','button');
+document.getElementById('tableCards').setAttribute('tabindex','0');
+document.getElementById('tableCards').setAttribute('aria-label','現在、場に出ているカードを拡大表示');
+function openFieldPopup(){
+ if(!state.table.length)return;
+ const box=document.getElementById('fieldPopupCards');box.innerHTML='';
+ state.table.forEach(c=>box.append(cardEl(c)));
+ fieldModal.classList.add('open');
+}
+document.getElementById('tableCards').addEventListener('click',openFieldPopup);
+document.getElementById('tableCards').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openFieldPopup()}});
+document.getElementById('fieldClose').addEventListener('click',()=>fieldModal.classList.remove('open'));
+fieldModal.addEventListener('click',e=>{if(e.target===fieldModal)fieldModal.classList.remove('open')});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')fieldModal.classList.remove('open')});
 newGame();
 </script>
-</body>
-</html>
+</body></html>
