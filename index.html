@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -149,6 +148,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
 <tbody>
 <tr><td>♦3スタート</td><td>♦3を持つプレイヤーが最初に♦3を出す。その後は時計回り。</td></tr>
 <tr><td>♠3返し</td><td>ジョーカーに対してスペードの3を出せる。</td></tr>
+<tr><td>ダウンナンバー</td><td>場が1枚出しのとき、場のカードより数字が1つ下で、同じ柄のカードも出せる（例：♥8に♥7）。</td></tr>
 <tr><td>4止め</td><td>場に8があるとき、4を2枚、または4とジョーカーのペアで場を流し、自分から再開。</td></tr>
 <tr><td>5スキップ</td><td>次のプレイヤーを飛ばす。</td></tr>
 <tr><td>7渡し</td><td>次のプレイヤーにカードを1枚渡す。</td></tr>
@@ -255,7 +255,6 @@ function newGame(){
  ];
 
  deck.forEach((c,i)=>players[i%4].hand.push(c));
-
  players.forEach(p=>p.hand.sort((a,b)=>a.rank-b.rank||SUITS.indexOf(a.suit)-SUITS.indexOf(b.suit)));
 
  const start=players.findIndex(p=>p.hand.some(c=>c.suit==='♦'&&c.rank===3));
@@ -282,7 +281,6 @@ function newGame(){
  document.getElementById('log').innerHTML='';
  log('ゲーム開始。♦3を持つ'+players[start].name+'が最初のプレイヤーです。');
  log('時計回りに進行します。');
-
  render();
 
  if(start===0){
@@ -395,6 +393,16 @@ function validSet(cards){
   cards.map(c=>c.rank).sort((a,b)=>a-b).every((r,i,a)=>i===0||r===a[i-1]+1);
 }
 
+/* ダウンナンバー判定
+   場が1枚出しで、同じ柄かつ数字がちょうど1つ下なら成立 */
+function isDownNumber(cards){
+ return cards.length===1 &&
+  state.table.length===1 &&
+  cards[0].suit!=='' &&
+  cards[0].suit===state.table[0].suit &&
+  cards[0].rank===state.table[0].rank-1;
+}
+
 function canBeat(cards){
  if(!validSet(cards))return false;
 
@@ -413,6 +421,10 @@ function canBeat(cards){
  if(cards.length!==state.table.length)return false;
  if(state.lockSuit&&cards.some(c=>c.suit!==state.lockSuit))return false;
 
+ // ダウンナンバーは通常の強さ比較より先に判定
+ if(isDownNumber(cards))return true;
+
+ // ♠3返し
  if(state.table.some(c=>c.rank===16)&&cards.length===1&&cards[0].rank===3&&cards[0].suit==='♠')return true;
 
  if(cards.length>1&&!cards.every(c=>c.rank===cards[0].rank)){
@@ -485,6 +497,7 @@ function playCards(cards,byCpu=false){
 
  const wasFirstMove=state.firstMove;
  const fourStop=isFourStop(cards);
+ const downNumber=isDownNumber(cards);
  const spadeThreeReversal=state.table.length===1&&state.table[0].rank===16&&cards.length===1&&cards[0].rank===3&&cards[0].suit==='♠';
 
  removeCards(p,cards);
@@ -499,6 +512,10 @@ function playCards(cards,byCpu=false){
  else state.lockSuit=null;
 
  log(p.name+'：'+cards.map(cardText).join(' '));
+
+ if(downNumber){
+  log('ダウンナンバー成立！同じ柄で1つ下の数字を出しました。');
+ }
 
  let clearNow=false;
  let skip=0;
@@ -712,6 +729,7 @@ function cpuTurn(){
 
   const options=[];
   for(const c of p.hand){
+   // canBeat内でダウンナンバーも判定するため、CPUも自動で使える
    if(canBeat([c]))options.push([c]);
   }
 
@@ -769,6 +787,7 @@ document.getElementById('newGame').onclick=()=>{
 document.getElementById('showRules').onclick=()=>{
  document.getElementById('rulesPanel').scrollIntoView({behavior:'smooth',block:'start'});
 };
+
 document.getElementById('hideRules').onclick=()=>{
  document.getElementById('rulesPanel').style.display='none';
 };
@@ -789,10 +808,12 @@ document.getElementById('tableCards').addEventListener('click',openFieldPopup);
 document.getElementById('tableCards').addEventListener('keydown',e=>{
  if(e.key==='Enter'||e.key===' '){e.preventDefault();openFieldPopup();}
 });
+
 document.getElementById('fieldClose').onclick=()=>fieldModal.classList.remove('open');
 fieldModal.addEventListener('click',e=>{
  if(e.target===fieldModal)fieldModal.classList.remove('open');
 });
+
 document.addEventListener('keydown',e=>{
  if(e.key==='Escape'){
   fieldModal.classList.remove('open');
